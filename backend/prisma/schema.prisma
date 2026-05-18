@@ -1,0 +1,319 @@
+// Tid Jor - Movie Review Platform
+// Prisma schema for PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER & AUTH
+// ============================================
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  FACEBOOK
+  LINE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  displayName  String
+  passwordHash String?  // null ถ้า login ด้วย OAuth อย่างเดียว
+  avatarUrl    String?
+  bio          String?
+  role         Role     @default(USER)
+  isBanned     Boolean  @default(false)
+  isVerified   Boolean  @default(false)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastLoginAt  DateTime?
+
+  // Relations
+  authProviders AuthAccount[]
+  reviews       Review[]
+  comments      Comment[]
+  likes         ReviewLike[]
+  watchlist     Watchlist[]
+  refreshTokens RefreshToken[]
+  adminLogs     AdminLog[]
+  moviesAdded   Movie[]       @relation("MovieAddedBy")
+
+  @@index([email])
+  @@index([username])
+}
+
+model AuthAccount {
+  id            String       @id @default(cuid())
+  userId        String
+  provider      AuthProvider
+  providerId    String       // ID จาก OAuth provider
+  accessToken   String?
+  refreshToken  String?
+  expiresAt     DateTime?
+  createdAt     DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@index([userId])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  userAgent String?
+  ipAddress String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ============================================
+// MOVIE
+// ============================================
+
+enum MovieSource {
+  TMDB        // ดึงจาก TMDB API
+  MANUAL      // Admin เพิ่มเอง (สำหรับหนังไทย)
+}
+
+enum MovieStatus {
+  RELEASED
+  UPCOMING
+  IN_PRODUCTION
+  RUMORED
+}
+
+model Movie {
+  id              String       @id @default(cuid())
+  slug            String       @unique  // สำหรับ SEO URL: /movies/spider-man-no-way-home
+
+  // Identifiers
+  tmdbId          Int?         @unique  // ถ้ามาจาก TMDB
+  imdbId          String?      @unique
+  source          MovieSource  @default(MANUAL)
+
+  // Basic info (รองรับ multi-language)
+  title           String       // ชื่อหลัก
+  titleTh         String?      // ชื่อไทย
+  titleEn         String?      // ชื่ออังกฤษ
+  originalTitle   String?
+  tagline         String?
+  overview        String?      @db.Text  // เรื่องย่อ
+  overviewTh      String?      @db.Text
+
+  // Media
+  posterUrl       String?
+  backdropUrl     String?
+  trailerUrl      String?
+
+  // Details
+  releaseDate     DateTime?
+  runtime         Int?         // นาที
+  status          MovieStatus  @default(RELEASED)
+  originalLanguage String?     // th, en, jp, ko
+  countries       String[]     // ["TH", "US"]
+
+  // Production
+  director        String?
+  cast            Json?        // [{ name, role, photoUrl }]
+  studio          String?
+  budget          BigInt?
+  revenue         BigInt?
+
+  // Stats (denormalized for performance)
+  averageRating   Float        @default(0)
+  ratingCount     Int          @default(0)
+  reviewCount     Int          @default(0)
+  watchlistCount  Int          @default(0)
+  popularity      Float        @default(0)  // คำนวณจาก views + recent reviews
+
+  // Meta
+  addedById       String?      // Admin ที่เพิ่ม (สำหรับ MANUAL)
+  isPublished     Boolean      @default(true)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Relations
+  addedBy         User?        @relation("MovieAddedBy", fields: [addedById], references: [id])
+  genres          MovieGenre[]
+  reviews         Review[]
+  watchlist       Watchlist[]
+
+  @@index([slug])
+  @@index([releaseDate])
+  @@index([averageRating])
+  @@index([popularity])
+  @@index([isPublished])
+}
+
+model Genre {
+  id          Int          @id @default(autoincrement())
+  tmdbId      Int?         @unique
+  name        String       @unique  // ชื่อหลัก (en)
+  nameTh      String       // ชื่อไทย
+  slug        String       @unique  // action, drama, horror
+
+  movies      MovieGenre[]
+}
+
+model MovieGenre {
+  movieId String
+  genreId Int
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([movieId, genreId])
+  @@index([genreId])
+}
+
+// ============================================
+// REVIEW & RATING
+// ============================================
+
+model Review {
+  id          String   @id @default(cuid())
+  userId      String
+  movieId     String
+
+  rating      Int      // 1-10 (เหมือน IMDB)
+  title       String?  // หัวข้อรีวิว
+  content     String   @db.Text
+  hasSpoiler  Boolean  @default(false)
+
+  // Stats
+  likeCount   Int      @default(0)
+  commentCount Int     @default(0)
+
+  isPublished Boolean  @default(true)
+  isHidden    Boolean  @default(false)  // Admin ซ่อน
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie    Movie        @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  likes    ReviewLike[]
+
+  @@unique([userId, movieId])  // 1 user รีวิวหนัง 1 เรื่องได้ครั้งเดียว
+  @@index([movieId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([likeCount])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String
+  parentId  String?  // สำหรับ nested reply
+  content   String   @db.Text
+
+  isHidden  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  review  Review    @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([reviewId])
+  @@index([userId])
+}
+
+model ReviewLike {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([userId])
+}
+
+// ============================================
+// WATCHLIST
+// ============================================
+
+enum WatchStatus {
+  WANT_TO_WATCH
+  WATCHING
+  WATCHED
+}
+
+model Watchlist {
+  id        String      @id @default(cuid())
+  userId    String
+  movieId   String
+  status    WatchStatus @default(WANT_TO_WATCH)
+  note      String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+  @@index([userId])
+  @@index([movieId])
+}
+
+// ============================================
+// ADMIN LOG
+// ============================================
+
+enum AdminAction {
+  CREATE_MOVIE
+  UPDATE_MOVIE
+  DELETE_MOVIE
+  HIDE_REVIEW
+  DELETE_REVIEW
+  BAN_USER
+  UNBAN_USER
+  CHANGE_ROLE
+  IMPORT_TMDB
+}
+
+model AdminLog {
+  id         String      @id @default(cuid())
+  adminId    String
+  action     AdminAction
+  targetType String      // "Movie", "Review", "User"
+  targetId   String
+  metadata   Json?       // ข้อมูลก่อน-หลัง
+  createdAt  DateTime    @default(now())
+
+  admin User @relation(fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@index([targetType, targetId])
+}
