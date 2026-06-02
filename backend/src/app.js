@@ -21,6 +21,9 @@ import { errorHandler, notFound } from './middleware/error.middleware.js';
 
 const app = express();
 
+// ให้ res.json() serialize BigInt ได้ (เช่น budget/revenue ของหนังจาก TMDB)
+BigInt.prototype.toJSON = function () { return Number(this); };
+
 // ===== Security =====
 app.use(helmet());
 app.use(cors({

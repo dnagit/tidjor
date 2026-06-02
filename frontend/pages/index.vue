@@ -11,6 +11,18 @@ const { data: topRated } = await useFetch<{ items: any[] }>('/api/movies', {
   query: { sort: 'averageRating', order: 'desc', limit: 12 },
 });
 
+// หนังเข้าใหม่ — เรียงตามวันฉายล่าสุด เฉพาะที่ฉายแล้ว
+const { data: newReleases } = await useFetch<{ items: any[] }>('/api/movies', {
+  baseURL: config.public.apiBase,
+  query: { sort: 'releaseDate', order: 'desc', released: 1, limit: 12 },
+});
+
+// หนังไทย — เรียงตามวันฉายล่าสุด
+const { data: thaiMovies } = await useFetch<{ items: any[] }>('/api/movies', {
+  baseURL: config.public.apiBase,
+  query: { lang: 'th', sort: 'releaseDate', order: 'desc', limit: 12 },
+});
+
 const { data: feed } = await useFetch<{ items: any[] }>('/api/reviews/feed', {
   baseURL: config.public.apiBase,
   query: { limit: 6 },
@@ -56,6 +68,28 @@ useSeoMeta({
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <MovieCard v-for="m in popular?.items" :key="m.id" :movie="m" />
+      </div>
+    </section>
+
+    <!-- หนังไทย (แสดงเฉพาะเมื่อมีหนังไทย) -->
+    <section v-if="thaiMovies?.items?.length" class="max-w-7xl mx-auto px-4 py-12">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">🇹🇭 หนังไทย</h2>
+        <NuxtLink to="/movies?lang=th" class="text-brand-600 text-sm hover:underline">ดูทั้งหมด →</NuxtLink>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <MovieCard v-for="m in thaiMovies.items" :key="m.id" :movie="m" />
+      </div>
+    </section>
+
+    <!-- New Releases (แสดงเฉพาะเมื่อมีหนังที่ฉายแล้ว) -->
+    <section v-if="newReleases?.items?.length" class="max-w-7xl mx-auto px-4 py-12">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">🆕 หนังเข้าใหม่</h2>
+        <NuxtLink to="/movies?sort=releaseDate" class="text-brand-600 text-sm hover:underline">ดูทั้งหมด →</NuxtLink>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <MovieCard v-for="m in newReleases.items" :key="m.id" :movie="m" />
       </div>
     </section>
 

@@ -10,10 +10,17 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "db:seed": "node prisma/seed.js"
+    "db:seed": "node prisma/seed.js",
+    "sync:movies": "node scripts/syncTmdb.js movies",
+    "sync:tv": "node scripts/syncTmdb.js tv",
+    "sync:all": "node scripts/syncTmdb.js all"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
+    "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -31,8 +38,7 @@
     "passport-line-auth": "^0.2.9",
     "passport-local": "^1.0.0",
     "sharp": "^0.33.5",
-    "slugify": "^1.6.6",
-    "axios": "^1.7.7"
+    "slugify": "^1.6.6"
   },
   "devDependencies": {
     "nodemon": "^3.1.7",

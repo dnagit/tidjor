@@ -28,20 +28,20 @@ enum AuthProvider {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  username     String   @unique
+  id           String  @id @default(cuid())
+  email        String  @unique
+  username     String  @unique
   displayName  String
-  passwordHash String?  // null ถ้า login ด้วย OAuth อย่างเดียว
+  passwordHash String? // null ถ้า login ด้วย OAuth อย่างเดียว
   avatarUrl    String?
   bio          String?
-  role         Role     @default(USER)
-  isBanned     Boolean  @default(false)
-  isVerified   Boolean  @default(false)
+  role         Role    @default(USER)
+  isBanned     Boolean @default(false)
+  isVerified   Boolean @default(false)
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  lastLoginAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastLoginAt DateTime?
 
   // Relations
   authProviders AuthAccount[]
@@ -51,21 +51,21 @@ model User {
   watchlist     Watchlist[]
   refreshTokens RefreshToken[]
   adminLogs     AdminLog[]
-  moviesAdded   Movie[]       @relation("MovieAddedBy")
+  moviesAdded   Movie[]        @relation("MovieAddedBy")
 
   @@index([email])
   @@index([username])
 }
 
 model AuthAccount {
-  id            String       @id @default(cuid())
-  userId        String
-  provider      AuthProvider
-  providerId    String       // ID จาก OAuth provider
-  accessToken   String?
-  refreshToken  String?
-  expiresAt     DateTime?
-  createdAt     DateTime     @default(now())
+  id           String       @id @default(cuid())
+  userId       String
+  provider     AuthProvider
+  providerId   String // ID จาก OAuth provider
+  accessToken  String?
+  refreshToken String?
+  expiresAt    DateTime?
+  createdAt    DateTime     @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -74,12 +74,12 @@ model AuthAccount {
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
+  id        String    @id @default(cuid())
+  token     String    @unique
   userId    String
   expiresAt DateTime
   revokedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   userAgent String?
   ipAddress String?
 
@@ -94,8 +94,8 @@ model RefreshToken {
 // ============================================
 
 enum MovieSource {
-  TMDB        // ดึงจาก TMDB API
-  MANUAL      // Admin เพิ่มเอง (สำหรับหนังไทย)
+  TMDB // ดึงจาก TMDB API
+  MANUAL // Admin เพิ่มเอง (สำหรับหนังไทย)
 }
 
 enum MovieStatus {
@@ -106,61 +106,61 @@ enum MovieStatus {
 }
 
 model Movie {
-  id              String       @id @default(cuid())
-  slug            String       @unique  // สำหรับ SEO URL: /movies/spider-man-no-way-home
+  id   String @id @default(cuid())
+  slug String @unique // สำหรับ SEO URL: /movies/spider-man-no-way-home
 
   // Identifiers
-  tmdbId          Int?         @unique  // ถ้ามาจาก TMDB
-  imdbId          String?      @unique
-  source          MovieSource  @default(MANUAL)
+  tmdbId Int?        @unique // ถ้ามาจาก TMDB
+  imdbId String?     @unique
+  source MovieSource @default(MANUAL)
 
   // Basic info (รองรับ multi-language)
-  title           String       // ชื่อหลัก
-  titleTh         String?      // ชื่อไทย
-  titleEn         String?      // ชื่ออังกฤษ
-  originalTitle   String?
-  tagline         String?
-  overview        String?      @db.Text  // เรื่องย่อ
-  overviewTh      String?      @db.Text
+  title         String // ชื่อหลัก
+  titleTh       String? // ชื่อไทย
+  titleEn       String? // ชื่ออังกฤษ
+  originalTitle String?
+  tagline       String?
+  overview      String? @db.Text // เรื่องย่อ
+  overviewTh    String? @db.Text
 
   // Media
-  posterUrl       String?
-  backdropUrl     String?
-  trailerUrl      String?
+  posterUrl   String?
+  backdropUrl String?
+  trailerUrl  String?
 
   // Details
-  releaseDate     DateTime?
-  runtime         Int?         // นาที
-  status          MovieStatus  @default(RELEASED)
-  originalLanguage String?     // th, en, jp, ko
-  countries       String[]     // ["TH", "US"]
+  releaseDate      DateTime?
+  runtime          Int? // นาที
+  status           MovieStatus @default(RELEASED)
+  originalLanguage String? // th, en, jp, ko
+  countries        String[] // ["TH", "US"]
 
   // Production
-  director        String?
-  cast            Json?        // [{ name, role, photoUrl }]
-  studio          String?
-  budget          BigInt?
-  revenue         BigInt?
+  director String?
+  cast     Json? // [{ name, role, photoUrl }]
+  studio   String?
+  budget   BigInt?
+  revenue  BigInt?
 
   // Stats (denormalized for performance)
-  averageRating   Float        @default(0)
-  ratingCount     Int          @default(0)
-  reviewCount     Int          @default(0)
-  watchlistCount  Int          @default(0)
-  popularity      Float        @default(0)  // คำนวณจาก views + recent reviews
+  averageRating  Float @default(0)
+  ratingCount    Int   @default(0)
+  reviewCount    Int   @default(0)
+  watchlistCount Int   @default(0)
+  popularity     Float @default(0) // คำนวณจาก views + recent reviews
 
   // Meta
-  addedById       String?      // Admin ที่เพิ่ม (สำหรับ MANUAL)
-  isPublished     Boolean      @default(true)
+  addedById   String? // Admin ที่เพิ่ม (สำหรับ MANUAL)
+  isPublished Boolean @default(true)
 
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  addedBy         User?        @relation("MovieAddedBy", fields: [addedById], references: [id])
-  genres          MovieGenre[]
-  reviews         Review[]
-  watchlist       Watchlist[]
+  addedBy   User?        @relation("MovieAddedBy", fields: [addedById], references: [id])
+  genres    MovieGenre[]
+  reviews   Review[]
+  watchlist Watchlist[]
 
   @@index([slug])
   @@index([releaseDate])
@@ -170,13 +170,13 @@ model Movie {
 }
 
 model Genre {
-  id          Int          @id @default(autoincrement())
-  tmdbId      Int?         @unique
-  name        String       @unique  // ชื่อหลัก (en)
-  nameTh      String       // ชื่อไทย
-  slug        String       @unique  // action, drama, horror
+  id     Int    @id @default(autoincrement())
+  tmdbId Int?   @unique
+  name   String @unique // ชื่อหลัก (en)
+  nameTh String // ชื่อไทย
+  slug   String @unique // action, drama, horror
 
-  movies      MovieGenre[]
+  movies MovieGenre[]
 }
 
 model MovieGenre {
@@ -195,31 +195,31 @@ model MovieGenre {
 // ============================================
 
 model Review {
-  id          String   @id @default(cuid())
-  userId      String
-  movieId     String
+  id      String @id @default(cuid())
+  userId  String
+  movieId String
 
-  rating      Int      // 1-10 (เหมือน IMDB)
-  title       String?  // หัวข้อรีวิว
-  content     String   @db.Text
-  hasSpoiler  Boolean  @default(false)
+  rating     Int // 1-10 (เหมือน IMDB)
+  title      String? // หัวข้อรีวิว
+  content    String  @db.Text
+  hasSpoiler Boolean @default(false)
 
   // Stats
-  likeCount   Int      @default(0)
-  commentCount Int     @default(0)
+  likeCount    Int @default(0)
+  commentCount Int @default(0)
 
-  isPublished Boolean  @default(true)
-  isHidden    Boolean  @default(false)  // Admin ซ่อน
+  isPublished Boolean @default(true)
+  isHidden    Boolean @default(false) // Admin ซ่อน
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   movie    Movie        @relation(fields: [movieId], references: [id], onDelete: Cascade)
   comments Comment[]
   likes    ReviewLike[]
 
-  @@unique([userId, movieId])  // 1 user รีวิวหนัง 1 เรื่องได้ครั้งเดียว
+  @@unique([userId, movieId]) // 1 user รีวิวหนัง 1 เรื่องได้ครั้งเดียว
   @@index([movieId])
   @@index([userId])
   @@index([createdAt])
@@ -227,11 +227,11 @@ model Review {
 }
 
 model Comment {
-  id        String   @id @default(cuid())
-  reviewId  String
-  userId    String
-  parentId  String?  // สำหรับ nested reply
-  content   String   @db.Text
+  id       String  @id @default(cuid())
+  reviewId String
+  userId   String
+  parentId String? // สำหรับ nested reply
+  content  String  @db.Text
 
   isHidden  Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -306,9 +306,9 @@ model AdminLog {
   id         String      @id @default(cuid())
   adminId    String
   action     AdminAction
-  targetType String      // "Movie", "Review", "User"
+  targetType String // "Movie", "Review", "User"
   targetId   String
-  metadata   Json?       // ข้อมูลก่อน-หลัง
+  metadata   Json? // ข้อมูลก่อน-หลัง
   createdAt  DateTime    @default(now())
 
   admin User @relation(fields: [adminId], references: [id])
@@ -316,4 +316,41 @@ model AdminLog {
   @@index([adminId])
   @@index([createdAt])
   @@index([targetType, targetId])
+}
+
+// ============================================
+// TMDB MEDIA (movies + tv) — synced from TMDB API
+// ============================================
+enum MediaType {
+  movie
+  tv
+}
+
+model TmdbMedia {
+  id               String    @id @default(cuid())
+  tmdbId           Int       @map("tmdb_id")
+  type             MediaType
+  title            String
+  originalTitle    String?   @map("original_title")
+  overview         String?
+  releaseDate      DateTime? @map("release_date")
+  posterPath       String?   @map("poster_path")
+  posterUrl        String?   @map("poster_url")
+  backdropPath     String?   @map("backdrop_path")
+  backdropUrl      String?   @map("backdrop_url")
+  voteAverage      Float?    @map("vote_average")
+  voteCount        Int?      @map("vote_count")
+  popularity       Float?
+  originalLanguage String?   @map("original_language")
+  genreIds         Int[]     @map("genre_ids")
+  genres           Json?
+  adult            Boolean   @default(false)
+  status           String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@unique([tmdbId, type])
+  @@index([type])
+  @@index([popularity])
+  @@map("tmdb_media")
 }

@@ -6,11 +6,13 @@ const config = useRuntimeConfig();
 const q = ref(route.query.q as string || '');
 const genre = ref(route.query.genre as string || '');
 const sort = ref(route.query.sort as string || 'popularity');
+const lang = ref(route.query.lang as string || '');
 const page = ref(Number(route.query.page) || 1);
 
 const query = computed(() => ({
   q: q.value || undefined,
   genre: genre.value || undefined,
+  lang: lang.value || undefined,
   sort: sort.value,
   page: page.value,
   limit: 24,

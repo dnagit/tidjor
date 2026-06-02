@@ -9,7 +9,7 @@ import fs from 'fs/promises';
 export async function list(req, res, next) {
   try {
     const {
-      q, genre, year, sort = 'popularity', order = 'desc',
+      q, genre, year, released, lang, sort = 'popularity', order = 'desc',
       page = 1, limit = 20,
     } = req.query;
 
@@ -30,6 +30,14 @@ export async function list(req, res, next) {
         lt: new Date(`${y + 1}-01-01`),
       };
     }
+
+    // หนังเข้าใหม่: เฉพาะที่ฉายแล้ว (releaseDate ≤ วันนี้)
+    if ((released === '1' || released === 'true') && !where.releaseDate) {
+      where.releaseDate = { lte: new Date() };
+    }
+
+    // กรองตามภาษาต้นฉบับ เช่น lang=th (หนังไทย)
+    if (lang) where.originalLanguage = lang;
 
     const allowedSorts = ['popularity', 'averageRating', 'releaseDate', 'createdAt', 'reviewCount'];
     const orderBy = { [allowedSorts.includes(sort) ? sort : 'popularity']: order === 'asc' ? 'asc' : 'desc' };
@@ -196,6 +204,34 @@ export async function removePoster(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// ===== Generic image upload (poster / backdrop) =====
+const IMAGE_SPECS = {
+  poster: { dir: 'uploads/posters', width: 500, height: 750 },
+  backdrop: { dir: 'uploads/backdrops', width: 1280, height: 720 },
+};
+
+export async function uploadImage(req, res, next) {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'no_file' });
+
+    const type = req.body.type === 'backdrop' ? 'backdrop' : 'poster';
+    const spec = IMAGE_SPECS[type];
+    await fs.mkdir(spec.dir, { recursive: true });
+
+    const filename = `${type}-${Date.now()}-${Math.round(Math.random() * 1e6)}.webp`;
+    const filepath = path.join(spec.dir, filename);
+
+    await sharp(req.file.buffer)
+      .resize(spec.width, spec.height, { fit: 'cover' })
+      .webp({ quality: 85 })
+      .toFile(filepath);
+
+    // absolute URL so <img> works from the SSR frontend on a different origin
+    const url = `${req.protocol}://${req.get('host')}/${spec.dir}/${filename}`;
+    res.status(201).json({ url, type });
+  } catch (err) { next(err); }
+}
+
 // ===== TMDB Import =====
 export async function searchTmdb(req, res, next) {
   try {
@@ -213,9 +249,21 @@ export async function importFromTmdb(req, res, next) {
     if (existing) return res.status(409).json({ error: 'already_imported', movie: existing });
 
     const details = await tmdb.getMovieDetails(tmdbId);
-    const slug = slugify(`${details.original_title || details.title}-${(details.release_date || '').slice(0, 4)}`, { lower: true, strict: true });
+    const baseSlug = slugify(`${details.original_title || details.title}-${(details.release_date || '').slice(0, 4)}`, { lower: true, strict: true }) || `movie-${tmdbId}`;
+
+    // กัน slug ซ้ำกับหนังเรื่องอื่น (คนละ tmdbId)
+    let slug = baseSlug;
+    const slugClash = await prisma.movie.findUnique({ where: { slug }, select: { id: true } });
+    if (slugClash) slug = `${baseSlug}-${tmdbId}`;
+
     const movieData = tmdb.mapTmdbMovie(details, slug);
     const { tmdbGenreIds, ...rest } = movieData;
+
+    // map status ให้ตรงกับ enum MovieStatus (กัน POST_PRODUCTION/PLANNED ฯลฯ พัง)
+    const validStatus = ['RELEASED', 'UPCOMING', 'IN_PRODUCTION', 'RUMORED'];
+    if (!validStatus.includes(rest.status)) {
+      rest.status = (rest.status === 'POST_PRODUCTION' || rest.status === 'PLANNED') ? 'UPCOMING' : 'RELEASED';
+    }
 
     // หา genre IDs ใน DB ของเรา
     const genres = await prisma.genre.findMany({ where: { tmdbId: { in: tmdbGenreIds } } });

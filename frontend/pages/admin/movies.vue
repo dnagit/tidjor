@@ -1,6 +1,8 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'admin', middleware: ['auth', 'admin'] });
 const api = useApi();
+const config = useRuntimeConfig();
+const auth = useAuthStore();
 
 const q = ref('');
 const tab = ref<'list' | 'tmdb' | 'manual'>('list');
@@ -15,6 +17,21 @@ async function removeMovie(id: string) {
   if (!confirm('ลบหนังเรื่องนี้?')) return;
   await api.delete(`/api/movies/${id}`);
   await refresh();
+}
+
+// ==== Image upload helper (multipart) ====
+async function uploadImageFile(file: File, type: 'poster' | 'backdrop'): Promise<string> {
+  const fd = new FormData();
+  fd.append('image', file);
+  fd.append('type', type);
+  const res = await $fetch<{ url: string }>('/api/movies/upload', {
+    baseURL: config.public.apiBase,
+    method: 'POST',
+    credentials: 'include',
+    headers: auth.accessToken ? { Authorization: `Bearer ${auth.accessToken}` } : {},
+    body: fd,
+  });
+  return res.url;
 }
 
 // ==== TMDB import ====
@@ -41,12 +58,83 @@ const newMovie = ref({
   releaseDate: '', runtime: 0, director: '',
   originalLanguage: 'th',
 });
+const uploadingNew = ref<'poster' | 'backdrop' | null>(null);
+
+async function onNewFile(e: Event, type: 'poster' | 'backdrop') {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  uploadingNew.value = type;
+  try {
+    const url = await uploadImageFile(file, type);
+    if (type === 'poster') newMovie.value.posterUrl = url;
+    else newMovie.value.backdropUrl = url;
+  } catch (err: any) {
+    alert(err?.data?.error || 'อัปโหลดไม่สำเร็จ');
+  } finally {
+    uploadingNew.value = null;
+  }
+}
 
 async function createMovie() {
   await api.post('/api/movies', newMovie.value);
   alert('สร้างหนังเรียบร้อย');
-  newMovie.value = { ...newMovie.value, title: '', titleTh: '', titleEn: '', slug: '', overview: '' };
+  newMovie.value = {
+    ...newMovie.value,
+    title: '', titleTh: '', titleEn: '', slug: '', overview: '',
+    posterUrl: '', backdropUrl: '',
+  };
   await refresh();
+}
+
+// ==== Edit poster / backdrop ====
+const editing = ref<{ id: string; title: string; posterUrl: string; backdropUrl: string } | null>(null);
+const editUploading = ref<'poster' | 'backdrop' | null>(null);
+const savingEdit = ref(false);
+
+async function openEdit(m: any) {
+  try {
+    const full = await api.get<any>(`/api/movies/slug/${m.slug}`);
+    editing.value = {
+      id: full.id,
+      title: full.titleTh || full.title,
+      posterUrl: full.posterUrl || '',
+      backdropUrl: full.backdropUrl || '',
+    };
+  } catch {
+    editing.value = { id: m.id, title: m.titleTh || m.title, posterUrl: m.posterUrl || '', backdropUrl: '' };
+  }
+}
+
+async function onEditFile(e: Event, type: 'poster' | 'backdrop') {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file || !editing.value) return;
+  editUploading.value = type;
+  try {
+    const url = await uploadImageFile(file, type);
+    if (type === 'poster') editing.value.posterUrl = url;
+    else editing.value.backdropUrl = url;
+  } catch (err: any) {
+    alert(err?.data?.error || 'อัปโหลดไม่สำเร็จ');
+  } finally {
+    editUploading.value = null;
+  }
+}
+
+async function saveEdit() {
+  if (!editing.value) return;
+  savingEdit.value = true;
+  try {
+    await api.patch(`/api/movies/${editing.value.id}`, {
+      posterUrl: editing.value.posterUrl || null,
+      backdropUrl: editing.value.backdropUrl || null,
+    });
+    editing.value = null;
+    await refresh();
+  } catch (err: any) {
+    alert(err?.data?.error || 'บันทึกไม่สำเร็จ');
+  } finally {
+    savingEdit.value = false;
+  }
 }
 
 useSeoMeta({ title: 'จัดการหนัง', robots: 'noindex' });
@@ -94,7 +182,8 @@ useSeoMeta({ title: 'จัดการหนัง', robots: 'noindex' });
             <td class="p-3 text-sm">{{ m.releaseDate ? new Date(m.releaseDate).getFullYear() : '-' }}</td>
             <td class="p-3 text-sm">⭐ {{ m.averageRating?.toFixed(1) || '-' }}</td>
             <td class="p-3 text-sm">{{ m.reviewCount }}</td>
-            <td class="p-3 text-right">
+            <td class="p-3 text-right space-x-3">
+              <button @click="openEdit(m)" class="text-brand-600 text-sm hover:underline">แก้ไข</button>
               <button @click="removeMovie(m.id)" class="text-red-600 text-sm hover:underline">ลบ</button>
             </td>
           </tr>
@@ -130,13 +219,74 @@ useSeoMeta({ title: 'จัดการหนัง', robots: 'noindex' });
         <input v-model="newMovie.title" placeholder="ชื่อหลัก (จะใช้แสดง) *" class="input md:col-span-2" />
         <input v-model="newMovie.slug" placeholder="slug (URL-friendly, optional)" class="input md:col-span-2" />
         <textarea v-model="newMovie.overview" rows="3" placeholder="เรื่องย่อ" class="input md:col-span-2" />
-        <input v-model="newMovie.posterUrl" placeholder="URL โปสเตอร์" class="input" />
-        <input v-model="newMovie.backdropUrl" placeholder="URL backdrop" class="input" />
+
+        <!-- Poster upload -->
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">โปสเตอร์</label>
+          <div class="flex gap-3 items-start">
+            <img v-if="newMovie.posterUrl" :src="newMovie.posterUrl" class="w-16 h-24 object-cover rounded border" />
+            <div class="flex-1 space-y-2">
+              <input type="file" accept="image/*" @change="onNewFile($event, 'poster')" class="block text-sm w-full" />
+              <input v-model="newMovie.posterUrl" placeholder="หรือวาง URL โปสเตอร์" class="input" />
+              <p v-if="uploadingNew === 'poster'" class="text-xs text-gray-500">กำลังอัปโหลด...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Backdrop upload -->
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">Backdrop</label>
+          <div class="space-y-2">
+            <img v-if="newMovie.backdropUrl" :src="newMovie.backdropUrl" class="w-full h-24 object-cover rounded border" />
+            <input type="file" accept="image/*" @change="onNewFile($event, 'backdrop')" class="block text-sm w-full" />
+            <input v-model="newMovie.backdropUrl" placeholder="หรือวาง URL backdrop" class="input" />
+            <p v-if="uploadingNew === 'backdrop'" class="text-xs text-gray-500">กำลังอัปโหลด...</p>
+          </div>
+        </div>
+
         <input v-model="newMovie.releaseDate" type="date" class="input" />
         <input v-model.number="newMovie.runtime" type="number" placeholder="ความยาว (นาที)" class="input" />
         <input v-model="newMovie.director" placeholder="ผู้กำกับ" class="input md:col-span-2" />
       </div>
       <button @click="createMovie" class="btn-primary mt-4">บันทึก</button>
+    </div>
+
+    <!-- EDIT MODAL -->
+    <div v-if="editing" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" @click.self="editing = null">
+      <div class="bg-white rounded-xl2 p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <h2 class="font-bold text-lg mb-4">แก้ไขรูปภาพ: {{ editing.title }}</h2>
+
+        <!-- Poster -->
+        <div class="mb-5">
+          <label class="block text-sm text-gray-600 mb-1">โปสเตอร์</label>
+          <div class="flex gap-3 items-start">
+            <img v-if="editing.posterUrl" :src="editing.posterUrl" class="w-20 h-28 object-cover rounded border" />
+            <div class="flex-1 space-y-2">
+              <input type="file" accept="image/*" @change="onEditFile($event, 'poster')" class="block text-sm w-full" />
+              <input v-model="editing.posterUrl" placeholder="URL โปสเตอร์" class="input" />
+              <p v-if="editUploading === 'poster'" class="text-xs text-gray-500">กำลังอัปโหลด...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Backdrop -->
+        <div class="mb-5">
+          <label class="block text-sm text-gray-600 mb-1">Backdrop</label>
+          <div class="space-y-2">
+            <img v-if="editing.backdropUrl" :src="editing.backdropUrl" class="w-full h-32 object-cover rounded border" />
+            <input type="file" accept="image/*" @change="onEditFile($event, 'backdrop')" class="block text-sm w-full" />
+            <input v-model="editing.backdropUrl" placeholder="URL backdrop" class="input" />
+            <p v-if="editUploading === 'backdrop'" class="text-xs text-gray-500">กำลังอัปโหลด...</p>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-4">
+          <button @click="editing = null" class="px-4 py-2 text-gray-600">ยกเลิก</button>
+          <button @click="saveEdit" :disabled="savingEdit" class="btn-primary">
+            {{ savingEdit ? 'กำลังบันทึก...' : 'บันทึก' }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>

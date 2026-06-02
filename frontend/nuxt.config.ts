@@ -22,7 +22,11 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#FFC107' },
       ],
       link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' },
+        { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' },
         { rel: 'icon', type: 'image/png', href: '/favicon.png' },
+        { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
         { rel: 'preconnect', href: 'https://image.tmdb.org' },
       ],
     },
@@ -34,6 +38,11 @@ export default defineNuxtConfig({
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
       siteName: process.env.NUXT_PUBLIC_SITE_NAME || 'ติดจอ',
     },
+  },
+
+  // หน้า admin ใช้ session ฝั่ง client (localStorage) → ปิด SSR กันหลุด login ตอน refresh
+  routeRules: {
+    '/admin/**': { ssr: false },
   },
 
 });
