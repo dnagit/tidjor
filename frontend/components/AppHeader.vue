@@ -23,11 +23,10 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
 
 <template>
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-200">
-    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4">
+    <div class="max-w-7xl mx-auto px-4 h-20 flex items-center gap-4">
       <!-- Logo -->
-      <NuxtLink to="/" class="flex items-center gap-2 shrink-0" @click="mobileOpen = false">
-        <span class="text-2xl">🎬</span>
-        <span class="font-display text-2xl font-bold text-brand-600">ติดจอ</span>
+      <NuxtLink to="/" class="flex items-center shrink-0" @click="mobileOpen = false">
+        <img src="/logo.jpg" alt="ติดจอ" class="h-14 w-auto rounded-lg object-contain" />
       </NuxtLink>
 
       <!-- Desktop nav -->

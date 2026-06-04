@@ -37,7 +37,7 @@ useSeoMeta({
   description: 'สำรวจหนังจากทั่วโลก คัดสรรโดยชุมชนคนไทย',
   ogTitle: () => q.value ? `ค้นหา: ${q.value} - ติดจอ` : 'หนังทั้งหมด - ติดจอ',
   ogDescription: 'สำรวจหนังจากทั่วโลก คัดสรรโดยชุมชนคนไทย',
-  ogImage: '/icon-512.png',
+  ogImage: '/logo.jpg',
   twitterCard: 'summary_large_image',
 });
 </script>

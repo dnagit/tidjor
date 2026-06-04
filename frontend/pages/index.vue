@@ -33,7 +33,7 @@ useSeoMeta({
   description: 'แพลตฟอร์มรีวิวหนังภาษาไทย ค้นพบหนังใหม่ ดูคะแนน อ่านรีวิวจากคนไทย และแบ่งปันความคิดเห็นของคุณ',
   ogTitle: 'ติดจอ - รีวิวหนังโดยคนไทย',
   ogDescription: 'ค้นพบหนังใหม่ อ่านรีวิวจากคนไทย ให้คะแนน และแชร์ความคิดเห็น',
-  ogImage: '/icon-512.png',
+  ogImage: '/logo.jpg',
   twitterCard: 'summary_large_image',
 });
 
