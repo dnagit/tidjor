@@ -19,7 +19,7 @@ useSeoMeta({
   description: m.overview || `รีวิวและให้คะแนนหนัง ${m.title}`,
   ogTitle: `${m.titleTh || m.title} - ติดจอ`,
   ogDescription: m.overview,
-  ogImage: m.backdropUrl || m.posterUrl,
+  ogImage: m.backdropUrl || m.posterUrl || '/icon-512.png',
   twitterCard: 'summary_large_image',
 });
 
