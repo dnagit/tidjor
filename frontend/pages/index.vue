@@ -60,6 +60,17 @@ useSeoMeta({
       </div>
     </section>
 
+    <!-- New Releases (แสดงเฉพาะเมื่อมีหนังที่ฉายแล้ว) -->
+    <section v-if="newReleases?.items?.length" class="max-w-7xl mx-auto px-4 py-12">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">🆕 หนังเข้าใหม่</h2>
+        <NuxtLink to="/movies?sort=releaseDate" class="text-brand-600 text-sm hover:underline">ดูทั้งหมด →</NuxtLink>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <MovieCard v-for="m in newReleases.items" :key="m.id" :movie="m" />
+      </div>
+    </section>
+
     <!-- Popular -->
     <section class="max-w-7xl mx-auto px-4 py-12">
       <div class="flex items-center justify-between mb-6">
@@ -79,17 +90,6 @@ useSeoMeta({
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <MovieCard v-for="m in thaiMovies.items" :key="m.id" :movie="m" />
-      </div>
-    </section>
-
-    <!-- New Releases (แสดงเฉพาะเมื่อมีหนังที่ฉายแล้ว) -->
-    <section v-if="newReleases?.items?.length" class="max-w-7xl mx-auto px-4 py-12">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold">🆕 หนังเข้าใหม่</h2>
-        <NuxtLink to="/movies?sort=releaseDate" class="text-brand-600 text-sm hover:underline">ดูทั้งหมด →</NuxtLink>
-      </div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <MovieCard v-for="m in newReleases.items" :key="m.id" :movie="m" />
       </div>
     </section>
 
