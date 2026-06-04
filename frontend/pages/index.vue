@@ -45,19 +45,8 @@ useSeoMeta({
 <template>
   <div>
     <!-- Hero -->
-    <section class="bg-gradient-to-br from-brand-50 to-yellow-100 py-16 px-4">
-      <div class="max-w-4xl mx-auto text-center">
-        <h1 class="font-display text-4xl md:text-6xl font-bold text-brand-700 mb-4">
-          🎬 ติดจอ
-        </h1>
-        <p class="text-xl text-gray-700 mb-8">
-          รีวิวหนัง โดยคนไทย เพื่อคนไทย
-        </p>
-        <div class="flex justify-center gap-3">
-          <NuxtLink to="/movies" class="btn-primary">เริ่มสำรวจหนัง</NuxtLink>
-          <NuxtLink to="/auth/register" class="btn-outline">สมัครเพื่อรีวิว</NuxtLink>
-        </div>
-      </div>
+    <section>
+      <img src="/banner.png" alt="ติดจอ" class="w-full h-auto" />
     </section>
 
     <!-- New Releases (แสดงเฉพาะเมื่อมีหนังที่ฉายแล้ว) -->
