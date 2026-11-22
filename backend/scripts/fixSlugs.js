@@ -16,12 +16,13 @@ const limit = Number(process.argv[2]) || undefined;
 const dry = process.argv.includes('--dry');
 
 async function main() {
-  // slug ที่มีแต่ตัวเลข เช่น 2026-1575337, 2026-tv-279246, movie-123
+  // slug ที่มีแต่ตัวเลข เช่น 2026-1575337, 2026-tv-279246, movie-2026
+  // (ตัดคำว่า tv-/movie- ที่ระบบเติมเองออกก่อนเช็ก ไม่งั้น "tv" จะถูกนับเป็นชื่อเรื่อง)
   const rows = await prisma.$queryRaw`
     SELECT id, slug, "tmdbId", "mediaType"::text AS "mediaType", "originalTitle", "releaseDate"
     FROM "Movie"
-    WHERE "tmdbId" IS NOT NULL AND slug !~ '[a-z]'
-       OR "tmdbId" IS NOT NULL AND slug ~ '^(movie|tv)-[0-9]+$'
+    WHERE "tmdbId" IS NOT NULL
+      AND regexp_replace(slug, '(^|-)(tv|movie)-', '-', 'g') !~ '[a-z]'
     ORDER BY "releaseDate" DESC NULLS LAST`;
   const todo = limit ? rows.slice(0, limit) : rows;
   console.log(`[fix-slugs] พบ ${rows.length} เรื่อง → ทำ ${todo.length}${dry ? ' (dry run)' : ''}`);
