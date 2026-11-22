@@ -70,6 +70,19 @@ export async function list(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// slug ทั้งหมดสำหรับ sitemap.xml ใน request เดียว (list API จำกัด 50 ต่อหน้า)
+export async function sitemap(req, res, next) {
+  try {
+    const items = await prisma.movie.findMany({
+      where: { isPublished: true },
+      select: { slug: true, mediaType: true, updatedAt: true },
+      orderBy: { releaseDate: { sort: 'desc', nulls: 'last' } },
+    });
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.json({ items });
+  } catch (err) { next(err); }
+}
+
 export async function getBySlug(req, res, next) {
   try {
     const movie = await prisma.movie.findUnique({
@@ -92,10 +105,19 @@ export async function getBySlug(req, res, next) {
       },
     });
 
+    // คะแนนจากผู้ใช้จริงเท่านั้น — ใช้ใน JSON-LD (AggregateRating) ของ Google
+    // ซึ่งต้องมาจากผู้ใช้ ไม่ใช่ AI (averageRating บนหน้าเว็บรวมคะแนนบอทด้วย)
+    const human = await prisma.review.aggregate({
+      where: { movieId: movie.id, isPublished: true, isHidden: false, user: { isBot: false } },
+      _avg: { rating: true },
+      _count: { _all: true },
+    });
+
     res.json({
       ...movie,
       genres: movie.genres.map(g => g.genre),
       reviews,
+      userRating: { average: human._avg.rating || 0, count: human._count._all },
     });
   } catch (err) { next(err); }
 }

@@ -32,10 +32,17 @@ app.use(cors({
 }));
 
 // ===== Rate limit =====
+// server อยู่หลัง Cloudflare → nginx: req.ip เป็น IP ของ proxy เหมือนกันทุก request
+// ถ้านับตาม req.ip ผู้ใช้ทั้งเว็บ (รวม Googlebot) จะใช้โควตาเดียวกัน → 429 ทั้งเว็บ
+// จึงนับตาม IP จริงจาก CF-Connecting-IP และจำกัดเฉพาะการเขียน (POST/PATCH/DELETE)
+// ส่วน GET ถูกเรียกจาก SSR ของ frontend ซึ่งมาจาก IP ของ server เดียวกันทุกหน้า จึงไม่นับ
 app.use('/api', rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
   standardHeaders: true,
+  keyGenerator: (req) => req.headers['cf-connecting-ip'] || req.ip,
+  skip: (req) => ['GET', 'HEAD', 'OPTIONS'].includes(req.method),
+  validate: { xForwardedForHeader: false },
 }));
 
 // ===== Body parsing =====
