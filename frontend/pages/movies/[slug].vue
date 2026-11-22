@@ -8,6 +8,11 @@ const { data: movie, error } = await useFetch<any>(`/api/movies/slug/${route.par
   baseURL: config.public.apiBase,
 });
 
+// 404 เฉพาะเมื่อ API บอกว่าไม่มีจริง — ถ้า API ล่ม/โดน rate limit ให้ตอบ 503
+// (ตอบ 404 ผิด ๆ จะทำให้ Google ถอดหน้านั้นออกจาก index)
+if (error.value && error.value.statusCode !== 404) {
+  throw createError({ statusCode: 503, statusMessage: 'โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง' });
+}
 if (!movie.value) throw createError({ statusCode: 404, statusMessage: 'ไม่พบหนัง' });
 
 const m = movie.value;
@@ -24,22 +29,55 @@ useSeoMeta({
   twitterCard: 'summary_large_image',
 });
 
-// useSchemaOrg([
-//   defineMovie({
-//     name: m.titleTh || m.title,
-//     description: m.overview,
-//     image: m.posterUrl,
-//     dateCreated: m.releaseDate,
-//     director: m.director ? { '@type': 'Person', name: m.director } : undefined,
-//     aggregateRating: m.ratingCount > 0 ? {
-//       '@type': 'AggregateRating',
-//       ratingValue: m.averageRating,
-//       ratingCount: m.ratingCount,
-//       bestRating: 10,
-//       worstRating: 1,
-//     } : undefined,
-//   }),
-// ]);
+// ===== Structured data (JSON-LD) — Movie / TVSeries =====
+// AggregateRating + Review ใช้เฉพาะคะแนน/รีวิวจากผู้ใช้จริง (ตามแนวทาง review snippet ของ Google)
+const pageUrl = `${siteUrl.replace(/\/+$/, '')}/movies/${m.slug}`;
+const humanReviews = (m.reviews || []).filter((r: any) => !r.user?.isBot).slice(0, 5);
+const people = (names?: string | null) =>
+  names ? names.split(',').map((n) => ({ '@type': 'Person', name: n.trim() })) : undefined;
+const schema: Record<string, any> = {
+  '@context': 'https://schema.org',
+  '@type': isTv ? 'TVSeries' : 'Movie',
+  name: m.titleTh || m.title,
+  alternateName: m.titleEn && m.titleEn !== (m.titleTh || m.title) ? m.titleEn : undefined,
+  url: pageUrl,
+  image: m.posterUrl || undefined,
+  description: m.overview || undefined,
+  genre: m.genres?.map((g: any) => g.nameTh),
+  inLanguage: m.originalLanguage || undefined,
+  countryOfOrigin: m.countries?.length ? m.countries.map((c: string) => ({ '@type': 'Country', name: c })) : undefined,
+  actor: Array.isArray(m.cast) ? m.cast.slice(0, 5).map((c: any) => ({ '@type': 'Person', name: c.name })) : undefined,
+  ...(isTv
+    ? {
+        startDate: m.releaseDate?.slice(0, 10),
+        creator: people(m.director),
+        numberOfSeasons: m.numberOfSeasons || undefined,
+        numberOfEpisodes: m.numberOfEpisodes || undefined,
+      }
+    : {
+        datePublished: m.releaseDate?.slice(0, 10),
+        director: people(m.director),
+        duration: m.runtime ? `PT${m.runtime}M` : undefined,
+      }),
+  aggregateRating: m.userRating?.count > 0 ? {
+    '@type': 'AggregateRating',
+    ratingValue: Number(m.userRating.average.toFixed(1)),
+    ratingCount: m.userRating.count,
+    bestRating: 10,
+    worstRating: 1,
+  } : undefined,
+  review: humanReviews.length ? humanReviews.map((r: any) => ({
+    '@type': 'Review',
+    author: { '@type': 'Person', name: r.user.displayName },
+    datePublished: r.createdAt?.slice(0, 10),
+    name: r.title || undefined,
+    reviewBody: r.hasSpoiler ? undefined : r.content,
+    reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 10, worstRating: 1 },
+  })) : undefined,
+};
+useHead({
+  script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(schema) }],
+});
 
 // ===== Review form =====
 const showForm = ref(false);

@@ -6,6 +6,7 @@ const { data, error } = await useFetch<any>(`/api/users/profile/${route.params.u
   baseURL: config.public.apiBase,
 });
 
+if (error.value && error.value.statusCode !== 404) throw createError({ statusCode: 503 });
 if (!data.value) throw createError({ statusCode: 404 });
 
 const u = data.value.user;
