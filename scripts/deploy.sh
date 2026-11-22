@@ -91,15 +91,17 @@ pm2 save >/dev/null
 # ---------- ตรวจว่า pm2 รันด้วย Node 20 จริง ----------
 # pm2 จำ node ที่ใช้ตอน start ครั้งแรกไว้ ถ้าเคย start ด้วย node 18 การ restart จะยังเป็น 18
 log "ตรวจเวอร์ชัน node ของ pm2"
+# pm2 CLI กับ daemon คนละเวอร์ชันจะพิมพ์ ">>>> In-memory PM2 is out-of-date" ปนมาก่อน JSON → ตัดทิ้ง
+PM2_JSON="$(pm2 jlist 2>/dev/null | sed -n '/^\[/,$p')"
 for name in "$PM2_BACKEND" "$PM2_FRONTEND"; do
-  v="$(pm2 jlist | node -e "
-    const list = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+  v="$(node -e "
+    const list = JSON.parse(process.argv[2]);
     const p = list.find((x) => x.name === process.argv[1]);
     console.log(p ? (p.pm2_env.node_version || '?') + ' ' + p.pm2_env.status : 'ไม่พบ');
-  " "$name")"
+  " "$name" "$PM2_JSON" 2>/dev/null)" || v="? (อ่านข้อมูล pm2 ไม่ได้)"
   case "$v" in
     "${NODE_VERSION}".*online) ok "$name: node $v" ;;
-    *) warn "$name: node $v — ควรเป็น Node ${NODE_VERSION} และ online (ดู pm2 logs $name)" ;;
+    *) warn "$name: node $v — ควรเป็น Node ${NODE_VERSION} และ online (ย้ายด้วย bash scripts/pm2-node20.sh, ดู pm2 logs $name)" ;;
   esac
 done
 
