@@ -16,6 +16,7 @@ import watchlistRoutes from './routes/watchlist.routes.js';
 import userRoutes from './routes/user.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import genreRoutes from './routes/genre.routes.js';
+import peopleRoutes from './routes/people.routes.js';
 
 import { errorHandler, notFound } from './middleware/error.middleware.js';
 
@@ -74,6 +75,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/watchlist', watchlistRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/genres', genreRoutes);
+app.use('/api/people', peopleRoutes);
 app.use('/api/admin', adminRoutes);
 
 // ===== Error handlers =====

@@ -52,7 +52,17 @@ useSeoMeta({
   <div>
     <!-- Hero -->
     <section>
-      <img src="/banner.png" alt="ติดจอ" class="w-full h-auto" />
+      <!-- รูปแรกที่เห็น (LCP): WebP + ขนาดตามจอ + โหลดก่อน + จองพื้นที่กันหน้ากระโดด -->
+      <img
+        src="/banner.webp"
+        srcset="/banner-960.webp 960w, /banner.webp 1942w"
+        sizes="100vw"
+        width="1942"
+        height="809"
+        alt="ติดจอ — รีวิวหนังและซีรีส์โดยคนไทย"
+        fetchpriority="high"
+        class="w-full h-auto"
+      />
     </section>
 
     <!-- New Releases (แสดงเฉพาะเมื่อมีหนังที่ฉายแล้ว) -->

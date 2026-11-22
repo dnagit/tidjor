@@ -1,6 +1,7 @@
 import prisma from '../config/prisma.js';
 import slugify from 'slugify';
 import * as tmdb from '../services/tmdb.service.js';
+import { fillCastIds } from '../services/people.service.js';
 import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
@@ -92,7 +93,18 @@ export async function getBySlug(req, res, next) {
         _count: { select: { reviews: true, watchlist: true } },
       },
     });
+    if (!movie) {
+      // slug เก่า (เปลี่ยนชื่อ URL ไปแล้ว) → 301 ไป slug ปัจจุบัน
+      const moved = await prisma.movie.findFirst({
+        where: { oldSlugs: { has: req.params.slug }, isPublished: true },
+        select: { slug: true },
+      });
+      if (moved) return res.redirect(301, `${req.baseUrl}/slug/${encodeURIComponent(moved.slug)}`);
+    }
     if (!movie || !movie.isPublished) return res.status(404).json({ error: 'not_found' });
+
+    // cast เก่ายังไม่มี person id → เติมจาก TMDB (ครั้งแรกครั้งเดียว) ให้กดไปหน้านักแสดงได้
+    movie.cast = await fillCastIds(movie);
 
     // Top reviews
     const reviews = await prisma.review.findMany({

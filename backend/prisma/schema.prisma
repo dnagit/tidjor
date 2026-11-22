@@ -108,7 +108,8 @@ enum MovieStatus {
 
 model Movie {
   id   String @id @default(cuid())
-  slug String @unique // สำหรับ SEO URL: /movies/spider-man-no-way-home
+  slug     String   @unique // สำหรับ SEO URL: /movies/spider-man-no-way-home
+  oldSlugs String[] @default([]) // slug เดิมที่เคยใช้ → redirect 301 มา slug ปัจจุบัน
 
   // Identifiers
   tmdbId    Int? // ถ้ามาจาก TMDB (unique คู่กับ mediaType — id หนังกับซีรีส์ของ TMDB ซ้ำกันได้)

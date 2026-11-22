@@ -104,22 +104,42 @@ async function ensureTvGenres() {
   }
 }
 
+const toSlug = (s) => slugify(s || '', { lower: true, strict: true });
+
+// ชื่อสำหรับ slug: ใช้ชื่อต้นฉบับถ้าเป็นตัวอักษรละติน
+// ไม่งั้น (ญี่ปุ่น/เกาหลี/จีน/ไทย/ฮินดี ฯลฯ ที่ slugify แล้วว่าง) ดึงชื่อภาษาอังกฤษจาก TMDB
+export async function slugTitle(tmdbId, mediaType, originalName) {
+  const original = toSlug(originalName);
+  if (/[a-z]/.test(original)) return original;
+  try {
+    const en = await tmdbGet(`/${mediaType}/${tmdbId}`, { language: 'en-US' });
+    const english = toSlug(mediaType === 'tv' ? en.name : en.title);
+    if (/[a-z]/.test(english)) return english;
+  } catch (err) {
+    logError(`ดึงชื่ออังกฤษ ${mediaType}/${tmdbId} ไม่สำเร็จ`, err);
+  }
+  return original;
+}
+
+// slug = ชื่อ-ปี และกันชนกับเรื่องอื่น (คนละ tmdbId หรือคนละประเภท) → ต่อท้ายด้วย tmdbId
+export async function buildSlug(tmdbId, mediaType, originalName, date) {
+  const title = await slugTitle(tmdbId, mediaType, originalName);
+  const baseSlug = [title || mediaType, (date || '').slice(0, 4)].filter(Boolean).join('-');
+  const clash = await prisma.movie.findUnique({
+    where: { slug: baseSlug },
+    select: { tmdbId: true, mediaType: true },
+  });
+  if (clash && (clash.tmdbId !== tmdbId || clash.mediaType !== mediaType)) {
+    return `${baseSlug}-${mediaType === 'tv' ? 'tv-' : ''}${tmdbId}`;
+  }
+  return baseSlug;
+}
+
 async function upsertMovie(details, mediaType = 'movie') {
   const isTv = mediaType === 'tv';
   const name = isTv ? (details.original_name || details.name) : (details.original_title || details.title);
   const date = isTv ? details.first_air_date : details.release_date;
-  const baseSlug = slugify(`${name}-${(date || '').slice(0, 4)}`, { lower: true, strict: true })
-    || `${mediaType}-${details.id}`;
-
-  // กัน slug ชนกับเรื่องอื่น (คนละ tmdbId หรือคนละประเภท) ตั้งแต่ต้น → ไม่ให้เกิด prisma error log
-  let slug = baseSlug;
-  const clash = await prisma.movie.findUnique({
-    where: { slug },
-    select: { tmdbId: true, mediaType: true },
-  });
-  if (clash && (clash.tmdbId !== details.id || clash.mediaType !== mediaType)) {
-    slug = `${baseSlug}-${isTv ? 'tv-' : ''}${details.id}`;
-  }
+  const slug = await buildSlug(details.id, mediaType, name, date);
 
   const mapped = isTv ? mapTmdbTv(details, slug) : mapTmdbMovie(details, slug);
   const { tmdbGenreIds, ...data } = mapped;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const NuxtLink = resolveComponent('NuxtLink');
 const route = useRoute();
 const config = useRuntimeConfig();
 const auth = useAuthStore();
@@ -16,6 +17,11 @@ if (error.value && error.value.statusCode !== 404) {
 if (!movie.value) throw createError({ statusCode: 404, statusMessage: 'ไม่พบหนัง' });
 
 const m = movie.value;
+
+// เข้ามาด้วย slug เก่า (API ตามไปที่ slug ใหม่ให้แล้ว) → 301 ไป URL ปัจจุบัน
+if (m.slug !== route.params.slug) {
+  await navigateTo(`/movies/${m.slug}`, { redirectCode: 301 });
+}
 const isTv = m.mediaType === 'tv';
 
 // ===== SEO =====
@@ -189,11 +195,23 @@ async function toggleWatchlist() {
       <section v-if="m.cast?.length" class="mt-10 pb-12">
         <h2 class="text-2xl font-bold mb-4">นักแสดง</h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          <div v-for="c in m.cast?.slice(0, 10)" :key="c.name" class="text-center">
-            <img v-if="c.photoUrl" :src="c.photoUrl" class="w-full aspect-square object-cover rounded-full mb-2" />
-            <p class="font-medium text-sm">{{ c.name }}</p>
+          <component
+            :is="c.id ? NuxtLink : 'div'"
+            v-for="c in m.cast?.slice(0, 10)"
+            :key="c.name"
+            :to="c.id ? personPath(c.id, c.name) : undefined"
+            class="text-center group"
+          >
+            <img
+              v-if="c.photoUrl"
+              :src="c.photoUrl"
+              :alt="c.name"
+              loading="lazy"
+              class="w-full aspect-square object-cover rounded-full mb-2 group-hover:ring-4 ring-brand-300 transition"
+            />
+            <p class="font-medium text-sm" :class="c.id && 'group-hover:text-brand-600'">{{ c.name }}</p>
             <p class="text-xs text-gray-500">{{ c.role }}</p>
-          </div>
+          </component>
         </div>
       </section>
     </div>

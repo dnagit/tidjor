@@ -20,6 +20,20 @@ export async function getMovieDetails(tmdbId) {
   return data;
 }
 
+// รายชื่อนักแสดงของเรื่อง (ใช้เติม person id ให้ข้อมูล cast เก่าที่ยังไม่มี id)
+export async function getCredits(tmdbId, mediaType = 'movie') {
+  const { data } = await tmdb.get(`/${mediaType}/${tmdbId}/credits`);
+  return data.cast || [];
+}
+
+// ข้อมูลนักแสดง + ผลงานทั้งหนังและซีรีส์
+export async function getPerson(personId, language = 'th-TH') {
+  const { data } = await tmdb.get(`/person/${personId}`, {
+    params: { language, append_to_response: 'combined_credits' },
+  });
+  return data;
+}
+
 // รีวิวบน TMDB ส่วนใหญ่เป็นภาษาอังกฤษ — ถ้าใช้ th-TH ตาม default จะได้ผลว่างเกือบทุกเรื่อง
 // mediaType: 'movie' | 'tv'
 export async function getMovieReviews(tmdbId, mediaType = 'movie') {
@@ -60,6 +74,7 @@ export function mapTmdbMovie(tmdb, slug) {
     countries: tmdb.production_countries?.map(c => c.iso_3166_1) || [],
     director: tmdb.credits?.crew?.find(c => c.job === 'Director')?.name,
     cast: tmdb.credits?.cast?.slice(0, 15).map(c => ({
+      id: c.id, // TMDB person id → หน้า /people/{id}
       name: c.name,
       role: c.character,
       photoUrl: imgUrl(c.profile_path),
@@ -99,6 +114,7 @@ export function mapTmdbTv(tmdb, slug) {
     countries: tmdb.origin_country || [],
     director: tmdb.created_by?.map(c => c.name).join(', ') || null, // ซีรีส์ = ผู้สร้าง
     cast: tmdb.credits?.cast?.slice(0, 15).map(c => ({
+      id: c.id, // TMDB person id → หน้า /people/{id}
       name: c.name,
       role: c.character,
       photoUrl: imgUrl(c.profile_path),
