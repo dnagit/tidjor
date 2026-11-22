@@ -30,6 +30,7 @@ useSeoMeta({ title: 'จัดการรีวิว', robots: 'noindex' });
         <div class="flex justify-between items-start mb-2">
           <div class="text-sm">
             <span class="font-medium">{{ r.user.displayName }}</span>
+            <AiBadge v-if="r.user.isBot" />
             รีวิว <NuxtLink :to="`/movies/${r.movie.slug}`" class="text-brand-600">{{ r.movie.title }}</NuxtLink>
             · ⭐ {{ r.rating }}/10
             · <span class="text-gray-500">{{ new Date(r.createdAt).toLocaleDateString('th-TH') }}</span>

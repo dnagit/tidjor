@@ -38,6 +38,7 @@ model User {
   role         Role    @default(USER)
   isBanned     Boolean @default(false)
   isVerified   Boolean @default(false)
+  isBot        Boolean @default(false) // บัญชีบอท (เช่น AI reviewer) — ไม่นับคะแนนรวม
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -110,9 +111,10 @@ model Movie {
   slug String @unique // สำหรับ SEO URL: /movies/spider-man-no-way-home
 
   // Identifiers
-  tmdbId Int?        @unique // ถ้ามาจาก TMDB
-  imdbId String?     @unique
-  source MovieSource @default(MANUAL)
+  tmdbId    Int? // ถ้ามาจาก TMDB (unique คู่กับ mediaType — id หนังกับซีรีส์ของ TMDB ซ้ำกันได้)
+  imdbId    String?     @unique
+  source    MovieSource @default(MANUAL)
+  mediaType MediaType   @default(movie) // movie = หนัง, tv = ซีรีส์ (ใช้ตาราง/หน้าเว็บ/รีวิวเดียวกัน)
 
   // Basic info (รองรับ multi-language)
   title         String // ชื่อหลัก
@@ -130,7 +132,9 @@ model Movie {
 
   // Details
   releaseDate      DateTime?
-  runtime          Int? // นาที
+  runtime          Int? // นาที (ซีรีส์ = ความยาวต่อตอน)
+  numberOfSeasons  Int? // ซีรีส์เท่านั้น
+  numberOfEpisodes Int? // ซีรีส์เท่านั้น
   status           MovieStatus @default(RELEASED)
   originalLanguage String? // th, en, jp, ko
   countries        String[] // ["TH", "US"]
@@ -162,7 +166,9 @@ model Movie {
   reviews   Review[]
   watchlist Watchlist[]
 
+  @@unique([tmdbId, mediaType])
   @@index([slug])
+  @@index([mediaType, releaseDate])
   @@index([releaseDate])
   @@index([averageRating])
   @@index([popularity])
@@ -203,6 +209,7 @@ model Review {
   title      String? // หัวข้อรีวิว
   content    String  @db.Text
   hasSpoiler Boolean @default(false)
+  sources    Json? // แหล่งอ้างอิงของรีวิวจากบอท: [{ name, url }]
 
   // Stats
   likeCount    Int @default(0)

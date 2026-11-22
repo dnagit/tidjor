@@ -6,7 +6,7 @@ export async function publicProfile(req, res, next) {
     const user = await prisma.user.findUnique({
       where: { username },
       select: {
-        id: true, username: true, displayName: true, avatarUrl: true, bio: true,
+        id: true, username: true, displayName: true, avatarUrl: true, bio: true, isBot: true,
         createdAt: true,
         _count: { select: { reviews: true, comments: true, watchlist: true } },
       },

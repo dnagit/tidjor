@@ -14,13 +14,19 @@ const { data: topRated } = await useFetch<{ items: any[] }>('/api/movies', {
 // หนังเข้าใหม่ — เรียงตามวันฉายล่าสุด เฉพาะที่ฉายแล้ว
 const { data: newReleases } = await useFetch<{ items: any[] }>('/api/movies', {
   baseURL: config.public.apiBase,
-  query: { sort: 'releaseDate', order: 'desc', released: 1, limit: 12 },
+  query: { type: 'movie', sort: 'releaseDate', order: 'desc', released: 1, limit: 12 },
+});
+
+// ซีรีส์ใหม่ — เรียงตามวันเริ่มออกอากาศล่าสุด เฉพาะที่ออกอากาศแล้ว
+const { data: newSeries } = await useFetch<{ items: any[] }>('/api/movies', {
+  baseURL: config.public.apiBase,
+  query: { type: 'tv', sort: 'releaseDate', order: 'desc', released: 1, limit: 12 },
 });
 
 // หนังไทย — เรียงตามวันฉายล่าสุด
 const { data: thaiMovies } = await useFetch<{ items: any[] }>('/api/movies', {
   baseURL: config.public.apiBase,
-  query: { lang: 'th', sort: 'releaseDate', order: 'desc', limit: 12 },
+  query: { type: 'movie', lang: 'th', sort: 'releaseDate', order: 'desc', limit: 12 },
 });
 
 const { data: feed } = await useFetch<{ items: any[] }>('/api/reviews/feed', {
@@ -53,10 +59,21 @@ useSeoMeta({
     <section v-if="newReleases?.items?.length" class="max-w-7xl mx-auto px-4 py-12">
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold">🆕 หนังเข้าใหม่</h2>
-        <NuxtLink to="/movies?sort=releaseDate" class="text-brand-600 text-sm hover:underline">ดูทั้งหมด →</NuxtLink>
+        <NuxtLink to="/movies?type=movie&sort=releaseDate" class="text-brand-600 text-sm hover:underline">ดูทั้งหมด →</NuxtLink>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <MovieCard v-for="m in newReleases.items" :key="m.id" :movie="m" />
+      </div>
+    </section>
+
+    <!-- ซีรีส์ใหม่ (แสดงเฉพาะเมื่อมีซีรีส์ที่ออกอากาศแล้ว) -->
+    <section v-if="newSeries?.items?.length" class="max-w-7xl mx-auto px-4 py-12">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">📺 ซีรีส์ใหม่</h2>
+        <NuxtLink to="/movies?type=tv&sort=releaseDate" class="text-brand-600 text-sm hover:underline">ดูทั้งหมด →</NuxtLink>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <MovieCard v-for="m in newSeries.items" :key="m.id" :movie="m" />
       </div>
     </section>
 
@@ -75,7 +92,7 @@ useSeoMeta({
     <section v-if="thaiMovies?.items?.length" class="max-w-7xl mx-auto px-4 py-12">
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold">🇹🇭 หนังไทย</h2>
-        <NuxtLink to="/movies?lang=th" class="text-brand-600 text-sm hover:underline">ดูทั้งหมด →</NuxtLink>
+        <NuxtLink to="/movies?type=movie&lang=th" class="text-brand-600 text-sm hover:underline">ดูทั้งหมด →</NuxtLink>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <MovieCard v-for="m in thaiMovies.items" :key="m.id" :movie="m" />
@@ -108,6 +125,7 @@ useSeoMeta({
             <div class="flex items-center gap-2 text-sm mt-1">
               <StarRating :model-value="r.rating" readonly size="sm" />
               <span class="text-gray-500">โดย {{ r.user.displayName }}</span>
+              <AiBadge v-if="r.user.isBot" />
             </div>
             <p class="text-sm text-gray-700 mt-2 line-clamp-3">{{ r.content }}</p>
           </div>

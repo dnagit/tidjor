@@ -1,4 +1,5 @@
 import prisma from '../config/prisma.js';
+import { recomputeMovieStats } from '../services/movieStats.service.js';
 
 export async function dashboard(req, res, next) {
   try {
@@ -97,7 +98,7 @@ export async function listReviews(req, res, next) {
     const items = await prisma.review.findMany({
       where, take, skip, orderBy: { createdAt: 'desc' },
       include: {
-        user: { select: { username: true, displayName: true } },
+        user: { select: { username: true, displayName: true, isBot: true } },
         movie: { select: { title: true, slug: true } },
       },
     });
@@ -110,6 +111,7 @@ export async function hideReview(req, res, next) {
     const { id } = req.params;
     const { hidden = true } = req.body;
     const review = await prisma.review.update({ where: { id }, data: { isHidden: hidden } });
+    await recomputeMovieStats(review.movieId); // ซ่อน/เลิกซ่อนแล้วคะแนนหนังต้องเปลี่ยนตาม
     await prisma.adminLog.create({
       data: {
         adminId: req.user.id, action: hidden ? 'HIDE_REVIEW' : 'CREATE_MOVIE',

@@ -1,13 +1,13 @@
 import axios from 'axios';
 import slugify from 'slugify';
 import prisma from '../config/prisma.js';
-import { mapTmdbMovie } from './tmdb.service.js';
+import { mapTmdbMovie, mapTmdbTv } from './tmdb.service.js';
 
 // ============================================================
 // TMDB → Database sync
-//   - หนัง (movie): เขียนลงตาราง Movie เดิม → แสดงในหน้าเว็บ/แอดมิน และ "รีวิวได้"
-//   - ซีรีย์ (tv):  เก็บใน tmdb_media (raw) ไว้ก่อน (Movie model เป็นหนังอย่างเดียว
-//                   ถ้าต้องการให้รีวิว tv ได้ ต้องขยาย schema เพิ่ม)
+//   - หนัง (movie) และซีรีย์ (tv) เขียนลงตาราง Movie เดียวกัน แยกด้วย mediaType
+//     → แสดงในหน้าเว็บ/แอดมิน และ "รีวิวได้" ทั้งคู่
+//   - (ตาราง tmdb_media เดิมไม่ได้ใช้แล้ว)
 //   - pagination ครบทุกหน้า, retry, rate limit, log, รันซ้ำได้ไม่ซ้ำ (upsert)
 // ============================================================
 
@@ -16,9 +16,6 @@ const BASE_URL = process.env.TMDB_BASE_URL || 'https://api.themoviedb.org/3';
 const API_KEY = process.env.TMDB_API_KEY;
 const ACCESS_TOKEN = process.env.TMDB_ACCESS_TOKEN;
 const LANGUAGE = process.env.TMDB_LANG || 'th-TH';
-
-const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
-const BACKDROP_BASE = 'https://image.tmdb.org/t/p/original';
 
 const RATE_DELAY_MS = Number(process.env.TMDB_RATE_DELAY_MS || 250);
 const MAX_RETRIES = Number(process.env.TMDB_MAX_RETRIES || 4);
@@ -45,12 +42,6 @@ function logError(msg, err) {
     ? `HTTP ${err.response.status} ${JSON.stringify(err.response.data)}`
     : err?.message || err;
   console.error(`[tmdb-sync][ERROR] ${new Date().toISOString()} ${msg} :: ${detail ?? ''}`);
-}
-
-function safeDate(value) {
-  if (!value) return null;
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 // แปลง status ของ TMDB ให้ตรงกับ enum MovieStatus เดิม
@@ -92,25 +83,45 @@ async function tmdbGet(path, params = {}, attempt = 1) {
 }
 
 // ============================================================
-// MOVIES → ตาราง Movie เดิม (แสดงผล + รีวิวได้)
+// MOVIES / TV → ตาราง Movie (แสดงผล + รีวิวได้)
 // ============================================================
-async function upsertMovie(details) {
-  const baseSlug = slugify(
-    `${details.original_title || details.title}-${(details.release_date || '').slice(0, 4)}`,
-    { lower: true, strict: true },
-  ) || `movie-${details.id}`;
 
-  // กัน slug ชนกับหนังเรื่องอื่น (คนละ tmdbId) ตั้งแต่ต้น → ไม่ให้เกิด prisma error log
+// genre ที่มีเฉพาะซีรีย์ (id ของ TMDB คนละชุดกับหนัง) — สร้างให้อัตโนมัติก่อน sync tv
+const TV_ONLY_GENRES = [
+  { tmdbId: 10759, name: 'Action & Adventure', nameTh: 'แอ็คชั่นและผจญภัย', slug: 'action-adventure' },
+  { tmdbId: 10762, name: 'Kids', nameTh: 'เด็ก', slug: 'kids' },
+  { tmdbId: 10763, name: 'News', nameTh: 'ข่าว', slug: 'news' },
+  { tmdbId: 10764, name: 'Reality', nameTh: 'เรียลลิตี้', slug: 'reality' },
+  { tmdbId: 10765, name: 'Sci-Fi & Fantasy', nameTh: 'ไซไฟและแฟนตาซี', slug: 'sci-fi-fantasy' },
+  { tmdbId: 10766, name: 'Soap', nameTh: 'ละครชุด', slug: 'soap' },
+  { tmdbId: 10767, name: 'Talk', nameTh: 'ทอล์กโชว์', slug: 'talk' },
+  { tmdbId: 10768, name: 'War & Politics', nameTh: 'สงครามและการเมือง', slug: 'war-politics' },
+];
+
+async function ensureTvGenres() {
+  for (const g of TV_ONLY_GENRES) {
+    await prisma.genre.upsert({ where: { tmdbId: g.tmdbId }, update: {}, create: g });
+  }
+}
+
+async function upsertMovie(details, mediaType = 'movie') {
+  const isTv = mediaType === 'tv';
+  const name = isTv ? (details.original_name || details.name) : (details.original_title || details.title);
+  const date = isTv ? details.first_air_date : details.release_date;
+  const baseSlug = slugify(`${name}-${(date || '').slice(0, 4)}`, { lower: true, strict: true })
+    || `${mediaType}-${details.id}`;
+
+  // กัน slug ชนกับเรื่องอื่น (คนละ tmdbId หรือคนละประเภท) ตั้งแต่ต้น → ไม่ให้เกิด prisma error log
   let slug = baseSlug;
   const clash = await prisma.movie.findUnique({
     where: { slug },
-    select: { tmdbId: true },
+    select: { tmdbId: true, mediaType: true },
   });
-  if (clash && clash.tmdbId !== details.id) {
-    slug = `${baseSlug}-${details.id}`;
+  if (clash && (clash.tmdbId !== details.id || clash.mediaType !== mediaType)) {
+    slug = `${baseSlug}-${isTv ? 'tv-' : ''}${details.id}`;
   }
 
-  const mapped = mapTmdbMovie(details, slug);
+  const mapped = isTv ? mapTmdbTv(details, slug) : mapTmdbMovie(details, slug);
   const { tmdbGenreIds, ...data } = mapped;
   data.status = sanitizeMovieStatus(data.status);
 
@@ -120,7 +131,7 @@ async function upsertMovie(details) {
   });
 
   await prisma.movie.upsert({
-    where: { tmdbId: details.id },
+    where: { tmdbId_mediaType: { tmdbId: details.id, mediaType } },
     update: data, // ไม่แตะ genres ตอน update (กัน MovieGenre ซ้ำ)
     create: {
       ...data,
@@ -129,19 +140,20 @@ async function upsertMovie(details) {
   });
 }
 
-export async function syncMovies({ maxPages = Infinity, startPage = 1 } = {}) {
+// list: 'popular' | 'now_playing' (กำลังฉาย) | 'upcoming' | 'top_rated'
+export async function syncMovies({ maxPages = Infinity, startPage = 1, list = 'popular' } = {}) {
   let saved = 0;
   let skipped = 0;
   let failed = 0;
 
-  const first = await tmdbGet('/movie/popular', { page: startPage });
+  const first = await tmdbGet(`/movie/${list}`, { page: startPage });
   const lastPage = Math.min(first.total_pages || 1, TMDB_PAGE_LIMIT, startPage - 1 + maxPages);
-  log(`เริ่ม sync หนัง → ตาราง Movie | total_pages=${first.total_pages} → หน้า ${startPage}..${lastPage}`);
+  log(`เริ่ม sync หนัง (${list}) → ตาราง Movie | total_pages=${first.total_pages} → หน้า ${startPage}..${lastPage}`);
 
   for (let page = startPage; page <= lastPage; page++) {
     let data;
     try {
-      data = page === startPage ? first : await tmdbGet('/movie/popular', { page });
+      data = page === startPage ? first : await tmdbGet(`/movie/${list}`, { page });
     } catch (err) {
       failed++;
       logError(`ดึงหน้า ${page} ไม่สำเร็จ ข้ามไป`, err);
@@ -152,7 +164,7 @@ export async function syncMovies({ maxPages = Infinity, startPage = 1 } = {}) {
       try {
         // เช็คซ้ำก่อน: ถ้ามีใน DB แล้ว ข้ามเลย (ไม่ต้องดึง details / ไม่ต้องเขียนทับ)
         const exists = await prisma.movie.findUnique({
-          where: { tmdbId: item.id },
+          where: { tmdbId_mediaType: { tmdbId: item.id, mediaType: 'movie' } },
           select: { id: true },
         });
         if (exists) { skipped++; continue; }
@@ -177,47 +189,23 @@ export async function syncMovies({ maxPages = Infinity, startPage = 1 } = {}) {
 }
 
 // ============================================================
-// TV → ตาราง tmdb_media (raw, ยังไม่รองรับรีวิวในระบบเดิม)
+// TV → ตาราง Movie (mediaType = tv)
+// list: 'popular' | 'on_the_air' (กำลังออกอากาศ) | 'airing_today' | 'top_rated'
 // ============================================================
-function mapTv(raw, details = null) {
-  const posterPath = raw.poster_path || null;
-  const backdropPath = raw.backdrop_path || null;
-  return {
-    tmdbId: raw.id,
-    type: 'tv',
-    title: raw.name || raw.original_name || '(ไม่มีชื่อ)',
-    originalTitle: raw.original_name || null,
-    overview: raw.overview || null,
-    releaseDate: safeDate(raw.first_air_date),
-    posterPath,
-    posterUrl: posterPath ? `${POSTER_BASE}${posterPath}` : null,
-    backdropPath,
-    backdropUrl: backdropPath ? `${BACKDROP_BASE}${backdropPath}` : null,
-    voteAverage: raw.vote_average ?? null,
-    voteCount: raw.vote_count ?? null,
-    popularity: raw.popularity ?? null,
-    originalLanguage: raw.original_language || null,
-    genreIds: Array.isArray(raw.genre_ids) ? raw.genre_ids : (details?.genres?.map((g) => g.id) ?? []),
-    genres: details?.genres ?? undefined,
-    adult: raw.adult ?? false,
-    status: details?.status ?? null,
-  };
-}
-
-export async function syncTvSeries({ maxPages = Infinity, withDetails = true, startPage = 1 } = {}) {
+export async function syncTvSeries({ maxPages = Infinity, startPage = 1, list = 'popular' } = {}) {
   let saved = 0;
   let skipped = 0;
   let failed = 0;
 
-  const first = await tmdbGet('/tv/popular', { page: startPage });
+  await ensureTvGenres();
+  const first = await tmdbGet(`/tv/${list}`, { page: startPage });
   const lastPage = Math.min(first.total_pages || 1, TMDB_PAGE_LIMIT, startPage - 1 + maxPages);
-  log(`เริ่ม sync ซีรีย์ → ตาราง tmdb_media | total_pages=${first.total_pages} → หน้า ${startPage}..${lastPage}`);
-  log('หมายเหตุ: ซีรีย์เก็บใน tmdb_media (ยังรีวิวในหน้าเว็บไม่ได้ จนกว่าจะขยาย schema)');
+  log(`เริ่ม sync ซีรีย์ (${list}) → ตาราง Movie | total_pages=${first.total_pages} → หน้า ${startPage}..${lastPage}`);
 
   for (let page = startPage; page <= lastPage; page++) {
     let data;
     try {
-      data = page === startPage ? first : await tmdbGet('/tv/popular', { page });
+      data = page === startPage ? first : await tmdbGet(`/tv/${list}`, { page });
     } catch (err) {
       failed++;
       logError(`[tv] ดึงหน้า ${page} ไม่สำเร็จ`, err);
@@ -227,15 +215,16 @@ export async function syncTvSeries({ maxPages = Infinity, withDetails = true, st
     for (const item of data.results || []) {
       try {
         // เช็คซ้ำก่อน: ถ้ามีแล้ว ข้ามเลย
-        const exists = await prisma.tmdbMedia.findUnique({
-          where: { tmdbId_type: { tmdbId: item.id, type: 'tv' } },
+        const exists = await prisma.movie.findUnique({
+          where: { tmdbId_mediaType: { tmdbId: item.id, mediaType: 'tv' } },
           select: { id: true },
         });
         if (exists) { skipped++; continue; }
 
-        const details = withDetails ? await tmdbGet(`/tv/${item.id}`) : null;
-        const { tmdbId, type, ...rest } = mapTv(item, details);
-        await prisma.tmdbMedia.create({ data: { tmdbId, type, ...rest } });
+        const details = await tmdbGet(`/tv/${item.id}`, {
+          append_to_response: 'credits,videos,external_ids',
+        });
+        await upsertMovie(details, 'tv');
         saved++;
       } catch (err) {
         failed++;

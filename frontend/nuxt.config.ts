@@ -46,4 +46,16 @@ export default defineNuxtConfig({
     '/admin/**': { ssr: false },
   },
 
+  // โปรเจกต์อยู่ใน ~/Documents (iCloud sync) → iCloud คอยแตะไฟล์ .nuxt/.DS_Store ทำให้ dev restart วนไม่หยุด
+  // สั่ง watcher ไม่ต้องสน path พวกนี้ (ทางแก้ถาวรคือย้ายโปรเจกต์ออกนอก iCloud Documents)
+  ignore: ['**/.DS_Store', '**/.nuxt/**', '**/node_modules/**'],
+
+  vite: {
+    server: {
+      watch: {
+        ignored: ['**/.nuxt/**', '**/node_modules/**', '**/.git/**', '**/.DS_Store', '**/dist/**'],
+      },
+    },
+  },
+
 });

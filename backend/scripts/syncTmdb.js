@@ -12,14 +12,12 @@ import { syncMovies, syncTvSeries, syncAllMedia } from '../src/services/tmdbSync
 //   node scripts/syncTmdb.js tv 10        # ดึงเฉพาะซีรีย์ 10 หน้าแรก
 //
 // env เสริม:
-//   TMDB_WITH_DETAILS=false   # ข้ามการดึง details ทีละเรื่อง (เร็วขึ้นมาก)
 //   TMDB_RATE_DELAY_MS=250    # หน่วงระหว่าง request (กัน rate limit)
 // ============================================================
 
 const [, , cmd = 'all', pagesArg] = process.argv;
 const maxPages = pagesArg ? Number(pagesArg) : Infinity;
-const withDetails = process.env.TMDB_WITH_DETAILS !== 'false';
-const opts = { maxPages, withDetails };
+const opts = { maxPages };
 
 async function main() {
   switch (cmd) {

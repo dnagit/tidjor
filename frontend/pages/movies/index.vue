@@ -7,12 +7,14 @@ const q = ref(route.query.q as string || '');
 const genre = ref(route.query.genre as string || '');
 const sort = ref(route.query.sort as string || 'popularity');
 const lang = ref(route.query.lang as string || '');
+const type = ref(route.query.type as string || ''); // movie | tv | '' (ทั้งหมด)
 const page = ref(Number(route.query.page) || 1);
 
 const query = computed(() => ({
   q: q.value || undefined,
   genre: genre.value || undefined,
   lang: lang.value || undefined,
+  type: type.value || undefined,
   sort: sort.value,
   page: page.value,
   limit: 24,
@@ -28,14 +30,19 @@ const { data: genres } = await useFetch<{ items: any[] }>('/api/genres', {
   baseURL: config.public.apiBase,
 });
 
-watch([q, genre, sort, page], () => {
+watch([q, genre, sort, type, page], () => {
   router.replace({ query: { ...query.value } });
 });
 
+// กดเมนู "หนัง" / "ซีรีส์" ตอนอยู่หน้านี้อยู่แล้ว → อัปเดตตัวกรองตาม URL
+watch(() => route.query.type, (t) => { type.value = (t as string) || ''; page.value = 1; });
+
+const heading = computed(() => (type.value === 'tv' ? 'ซีรีส์ทั้งหมด' : type.value === 'movie' ? 'หนังทั้งหมด' : 'หนังและซีรีส์ทั้งหมด'));
+
 useSeoMeta({
-  title: () => q.value ? `ค้นหา: ${q.value}` : 'หนังทั้งหมด',
+  title: () => q.value ? `ค้นหา: ${q.value}` : heading.value,
   description: 'สำรวจหนังจากทั่วโลก คัดสรรโดยชุมชนคนไทย',
-  ogTitle: () => q.value ? `ค้นหา: ${q.value} - ติดจอ` : 'หนังทั้งหมด - ติดจอ',
+  ogTitle: () => q.value ? `ค้นหา: ${q.value} - ติดจอ` : `${heading.value} - ติดจอ`,
   ogDescription: 'สำรวจหนังจากทั่วโลก คัดสรรโดยชุมชนคนไทย',
   ogImage: '/logo.jpg',
   twitterCard: 'summary_large_image',
@@ -44,11 +51,16 @@ useSeoMeta({
 
 <template>
   <div class="max-w-7xl mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-6">หนังทั้งหมด</h1>
+    <h1 class="text-3xl font-bold mb-6">{{ heading }}</h1>
 
     <!-- Filters -->
     <div class="card p-4 mb-6 flex flex-wrap gap-3 items-center">
       <input v-model="q" type="search" placeholder="ค้นหา..." class="input max-w-xs" />
+      <select v-model="type" class="input max-w-xs">
+        <option value="">หนังและซีรีส์</option>
+        <option value="movie">หนัง</option>
+        <option value="tv">ซีรีส์</option>
+      </select>
       <select v-model="genre" class="input max-w-xs">
         <option value="">ทุกหมวดหมู่</option>
         <option v-for="g in genres?.items" :key="g.id" :value="g.slug">{{ g.nameTh }}</option>

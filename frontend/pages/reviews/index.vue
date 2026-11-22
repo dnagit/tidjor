@@ -26,6 +26,7 @@ useSeoMeta({
             <div class="flex items-center gap-2 text-sm mt-1">
               <StarRating :model-value="r.rating" readonly size="sm" />
               <span class="text-gray-500">โดย {{ r.user.displayName }} · {{ new Date(r.createdAt).toLocaleDateString('th-TH') }}</span>
+              <AiBadge v-if="r.user.isBot" />
             </div>
             <p class="text-gray-700 mt-2 whitespace-pre-line line-clamp-4">{{ r.content }}</p>
           </div>

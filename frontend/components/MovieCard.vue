@@ -7,6 +7,8 @@ defineProps<{
     posterUrl?: string;
     averageRating?: number;
     releaseDate?: string;
+    mediaType?: 'movie' | 'tv';
+    numberOfSeasons?: number;
     genres?: { nameTh: string; slug: string }[];
   };
 }>();
@@ -14,7 +16,10 @@ defineProps<{
 
 <template>
   <NuxtLink :to="`/movies/${movie.slug}`" class="card overflow-hidden hover:shadow-md transition group">
-    <div class="aspect-[2/3] bg-gray-100 overflow-hidden">
+    <div class="aspect-[2/3] bg-gray-100 overflow-hidden relative">
+      <span v-if="movie.mediaType === 'tv'" class="absolute top-2 left-2 z-10 text-xs font-medium bg-ink/80 text-white rounded px-1.5 py-0.5">
+        ซีรีส์{{ movie.numberOfSeasons ? ` · ${movie.numberOfSeasons} ซีซั่น` : '' }}
+      </span>
       <img
         v-if="movie.posterUrl"
         :src="movie.posterUrl"

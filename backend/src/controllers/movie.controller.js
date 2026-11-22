@@ -9,7 +9,7 @@ import fs from 'fs/promises';
 export async function list(req, res, next) {
   try {
     const {
-      q, genre, year, released, lang, sort = 'popularity', order = 'desc',
+      q, genre, year, released, lang, type, sort = 'popularity', order = 'desc',
       page = 1, limit = 20,
     } = req.query;
 
@@ -39,6 +39,9 @@ export async function list(req, res, next) {
     // กรองตามภาษาต้นฉบับ เช่น lang=th (หนังไทย)
     if (lang) where.originalLanguage = lang;
 
+    // type=movie (หนัง) | type=tv (ซีรีส์) — ไม่ระบุ = ทั้งหมด
+    if (type === 'movie' || type === 'tv') where.mediaType = type;
+
     const allowedSorts = ['popularity', 'averageRating', 'releaseDate', 'createdAt', 'reviewCount'];
     const orderBy = { [allowedSorts.includes(sort) ? sort : 'popularity']: order === 'asc' ? 'asc' : 'desc' };
 
@@ -48,6 +51,7 @@ export async function list(req, res, next) {
         select: {
           id: true, slug: true, title: true, titleTh: true, posterUrl: true,
           releaseDate: true, averageRating: true, ratingCount: true, reviewCount: true,
+          mediaType: true, numberOfSeasons: true,
           genres: { select: { genre: { select: { name: true, nameTh: true, slug: true } } } },
         },
       }),
@@ -83,7 +87,7 @@ export async function getBySlug(req, res, next) {
       orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
       take: 10,
       include: {
-        user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+        user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isBot: true } },
         _count: { select: { comments: true, likes: true } },
       },
     });
@@ -245,7 +249,7 @@ export async function searchTmdb(req, res, next) {
 export async function importFromTmdb(req, res, next) {
   try {
     const { tmdbId } = req.body;
-    const existing = await prisma.movie.findUnique({ where: { tmdbId } });
+    const existing = await prisma.movie.findUnique({ where: { tmdbId_mediaType: { tmdbId, mediaType: 'movie' } } });
     if (existing) return res.status(409).json({ error: 'already_imported', movie: existing });
 
     const details = await tmdb.getMovieDetails(tmdbId);

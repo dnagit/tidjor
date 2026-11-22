@@ -11,12 +11,13 @@ const { data: movie, error } = await useFetch<any>(`/api/movies/slug/${route.par
 if (!movie.value) throw createError({ statusCode: 404, statusMessage: 'ไม่พบหนัง' });
 
 const m = movie.value;
+const isTv = m.mediaType === 'tv';
 
 // ===== SEO =====
 const siteUrl = config.public.siteUrl;
 useSeoMeta({
   title: `${m.titleTh || m.title} (${m.releaseDate ? new Date(m.releaseDate).getFullYear() : ''})`,
-  description: m.overview || `รีวิวและให้คะแนนหนัง ${m.title}`,
+  description: m.overview || `รีวิวและให้คะแนน${isTv ? 'ซีรีส์' : 'หนัง'} ${m.title}`,
   ogTitle: `${m.titleTh || m.title} - ติดจอ`,
   ogDescription: m.overview,
   ogImage: m.backdropUrl || m.posterUrl || '/logo.jpg',
@@ -93,15 +94,17 @@ async function toggleWatchlist() {
             <div>
               <div class="flex items-center gap-2">
                 <span class="text-3xl text-brand-500">⭐</span>
-                <span class="text-3xl font-bold">{{ m.averageRating?.toFixed(1) || '-' }}</span>
+                <span class="text-3xl font-bold">{{ m.ratingCount ? m.averageRating.toFixed(1) : '-' }}</span>
                 <span class="text-gray-500">/10</span>
               </div>
               <p class="text-sm text-gray-500">{{ m.ratingCount }} โหวต</p>
             </div>
             <div class="text-sm text-gray-600">
-              <p v-if="m.releaseDate">📅 {{ new Date(m.releaseDate).toLocaleDateString('th-TH') }}</p>
-              <p v-if="m.runtime">⏱️ {{ m.runtime }} นาที</p>
-              <p v-if="m.director">🎬 {{ m.director }}</p>
+              <p v-if="isTv" class="font-medium">📺 ซีรีส์<template v-if="m.studio"> · {{ m.studio }}</template></p>
+              <p v-if="m.releaseDate">📅 {{ isTv ? 'เริ่มออกอากาศ ' : '' }}{{ new Date(m.releaseDate).toLocaleDateString('th-TH') }}</p>
+              <p v-if="isTv && m.numberOfSeasons">🗂️ {{ m.numberOfSeasons }} ซีซั่น<template v-if="m.numberOfEpisodes"> · {{ m.numberOfEpisodes }} ตอน</template></p>
+              <p v-if="m.runtime">⏱️ {{ m.runtime }} นาที{{ isTv ? '/ตอน' : '' }}</p>
+              <p v-if="m.director">🎬 {{ isTv ? 'ผู้สร้าง: ' : '' }}{{ m.director }}</p>
             </div>
           </div>
 

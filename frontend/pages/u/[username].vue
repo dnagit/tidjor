@@ -23,7 +23,7 @@ useSeoMeta({
         {{ u.displayName?.[0]?.toUpperCase() }}
       </div>
       <div class="flex-1">
-        <h1 class="text-2xl font-bold">{{ u.displayName }}</h1>
+        <h1 class="text-2xl font-bold">{{ u.displayName }} <AiBadge v-if="u.isBot" class="align-middle" /></h1>
         <p class="text-gray-500">@{{ u.username }}</p>
         <p v-if="u.bio" class="mt-2">{{ u.bio }}</p>
         <div class="flex gap-4 mt-3 text-sm">

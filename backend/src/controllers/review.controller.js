@@ -1,21 +1,5 @@
 import prisma from '../config/prisma.js';
-
-// Recompute averageRating + counts for a movie
-async function recomputeMovieStats(movieId) {
-  const agg = await prisma.review.aggregate({
-    where: { movieId, isPublished: true, isHidden: false },
-    _avg: { rating: true },
-    _count: { _all: true },
-  });
-  await prisma.movie.update({
-    where: { id: movieId },
-    data: {
-      averageRating: agg._avg.rating || 0,
-      ratingCount: agg._count._all,
-      reviewCount: agg._count._all,
-    },
-  });
-}
+import { recomputeMovieStats } from '../services/movieStats.service.js';
 
 export async function listForMovie(req, res, next) {
   try {
@@ -35,7 +19,7 @@ export async function listForMovie(req, res, next) {
         where: { movieId, isPublished: true, isHidden: false },
         orderBy, take, skip,
         include: {
-          user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+          user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isBot: true } },
         },
       }),
       prisma.review.count({ where: { movieId, isPublished: true, isHidden: false } }),
@@ -55,7 +39,7 @@ export async function create(req, res, next) {
       create: { userId: req.user.id, movieId, rating, title, content, hasSpoiler },
       update: { rating, title, content, hasSpoiler },
       include: {
-        user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+        user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isBot: true } },
       },
     });
 
@@ -110,7 +94,7 @@ export async function feed(req, res, next) {
       orderBy: { createdAt: 'desc' },
       take, skip,
       include: {
-        user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+        user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isBot: true } },
         movie: { select: { id: true, slug: true, title: true, posterUrl: true } },
       },
     });
