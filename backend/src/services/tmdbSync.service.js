@@ -141,6 +141,20 @@ async function upsertMovie(details, mediaType = 'movie') {
 }
 
 // list: 'popular' | 'now_playing' (กำลังฉาย) | 'upcoming' | 'top_rated'
+// ดึงเรื่องเดียวตาม tmdbId (ถ้ายังไม่มีใน DB) แล้วคืนค่า Movie
+export async function syncOne(tmdbId, mediaType = 'movie') {
+  const where = { tmdbId_mediaType: { tmdbId, mediaType } };
+  const existing = await prisma.movie.findUnique({ where });
+  if (existing) return existing;
+
+  if (mediaType === 'tv') await ensureTvGenres();
+  const details = await tmdbGet(`/${mediaType}/${tmdbId}`, {
+    append_to_response: mediaType === 'tv' ? 'credits,videos,external_ids' : 'credits,videos,images',
+  });
+  await upsertMovie(details, mediaType);
+  return prisma.movie.findUnique({ where });
+}
+
 export async function syncMovies({ maxPages = Infinity, startPage = 1, list = 'popular' } = {}) {
   let saved = 0;
   let skipped = 0;
