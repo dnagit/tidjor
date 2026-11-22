@@ -6,7 +6,7 @@
 #   bash scripts/deploy.sh backend    # เฉพาะ backend
 #   bash scripts/deploy.sh frontend   # เฉพาะ frontend
 #
-# ขั้นตอน: git pull → ใช้ Node 20 (nvm) → install → prisma migrate (backend)
+# ขั้นตอน: git pull → ใช้ Node 20 (nvm) → install → prisma db push (backend)
 #          → nuxt build (frontend) → pm2 restart
 #
 # env (ไม่ต้องตั้งก็ได้):
@@ -64,9 +64,11 @@ deploy_backend() {
 
   install_deps
 
-  log "backend: prisma migrate deploy"
-  npx prisma migrate deploy
-  npx prisma generate
+  # prisma/migrations ถูก .gitignore → migrate deploy บน server ไม่เห็น migration ใหม่
+  # จึงใช้ db push ให้ DB ตรงกับ schema.prisma แทน
+  # (ไม่ใส่ --accept-data-loss: ถ้ามีการเปลี่ยนที่ทำให้ข้อมูลหาย จะหยุด deploy ก่อน restart)
+  log "backend: prisma db push"
+  npx prisma db push
 
   log "backend: pm2 restart $PM2_BACKEND"
   pm2 restart "$PM2_BACKEND" --update-env
