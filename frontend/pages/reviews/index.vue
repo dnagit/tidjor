@@ -16,11 +16,11 @@ useSeoMeta({
     <div class="space-y-4">
       <article v-for="r in data?.items" :key="r.id" class="card p-4">
         <div class="flex gap-4">
-          <NuxtLink :to="`/movies/${r.movie.slug}`" class="shrink-0">
+          <NuxtLink :to="mediaPath(r.movie)" class="shrink-0">
             <img v-if="r.movie.posterUrl" :src="r.movie.posterUrl" class="w-20 h-28 object-cover rounded" />
           </NuxtLink>
           <div class="flex-1">
-            <NuxtLink :to="`/movies/${r.movie.slug}`" class="font-bold hover:text-brand-600">
+            <NuxtLink :to="mediaPath(r.movie)" class="font-bold hover:text-brand-600">
               {{ r.movie.title }}
             </NuxtLink>
             <div class="flex items-center gap-2 text-sm mt-1">

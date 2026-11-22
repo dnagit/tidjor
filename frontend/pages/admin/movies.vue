@@ -176,7 +176,7 @@ useSeoMeta({ title: 'จัดการหนัง', robots: 'noindex' });
               <img v-if="m.posterUrl" :src="m.posterUrl" class="w-10 h-14 object-cover rounded" />
             </td>
             <td class="p-3">
-              <NuxtLink :to="`/movies/${m.slug}`" class="font-medium hover:text-brand-600">{{ m.titleTh || m.title }}</NuxtLink>
+              <NuxtLink :to="mediaPath(m)" class="font-medium hover:text-brand-600">{{ m.titleTh || m.title }}</NuxtLink>
               <p class="text-xs text-gray-500">{{ m.titleEn }}</p>
             </td>
             <td class="p-3 text-sm">{{ m.releaseDate ? new Date(m.releaseDate).getFullYear() : '-' }}</td>

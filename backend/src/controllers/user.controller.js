@@ -18,7 +18,7 @@ export async function publicProfile(req, res, next) {
       orderBy: { createdAt: 'desc' },
       take: 20,
       include: {
-        movie: { select: { id: true, slug: true, title: true, titleTh: true, posterUrl: true } },
+        movie: { select: { id: true, slug: true, title: true, titleTh: true, posterUrl: true, mediaType: true } },
       },
     });
 

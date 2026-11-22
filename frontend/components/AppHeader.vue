@@ -32,7 +32,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
       <!-- Desktop nav -->
       <nav class="hidden md:flex items-center gap-1 ml-4">
         <NuxtLink to="/movies?type=movie" class="btn-ghost text-sm">หนัง</NuxtLink>
-        <NuxtLink to="/movies?type=tv" class="btn-ghost text-sm">ซีรีส์</NuxtLink>
+        <NuxtLink to="/series" class="btn-ghost text-sm">ซีรีส์</NuxtLink>
         <NuxtLink to="/movies?sort=popularity" class="btn-ghost text-sm">ยอดนิยม</NuxtLink>
         <NuxtLink to="/reviews" class="btn-ghost text-sm">รีวิวล่าสุด</NuxtLink>
       </nav>
@@ -98,7 +98,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
             <NuxtLink to="/movies?type=movie" class="py-3.5 border-b border-gray-100 text-gray-800 font-medium" @click="mobileOpen = false">
               🎬 หนัง
             </NuxtLink>
-            <NuxtLink to="/movies?type=tv" class="py-3.5 border-b border-gray-100 text-gray-800 font-medium" @click="mobileOpen = false">
+            <NuxtLink to="/series" class="py-3.5 border-b border-gray-100 text-gray-800 font-medium" @click="mobileOpen = false">
               📺 ซีรีส์
             </NuxtLink>
             <NuxtLink to="/movies?sort=popularity" class="py-3.5 border-b border-gray-100 text-gray-800 font-medium" @click="mobileOpen = false">

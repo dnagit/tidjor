@@ -18,9 +18,11 @@ if (!movie.value) throw createError({ statusCode: 404, statusMessage: 'ไม่
 
 const m = movie.value;
 
-// เข้ามาด้วย slug เก่า (API ตามไปที่ slug ใหม่ให้แล้ว) → 301 ไป URL ปัจจุบัน
-if (m.slug !== route.params.slug) {
-  await navigateTo(`/movies/${m.slug}`, { redirectCode: 301 });
+// URL หลัก: หนัง /movies/{slug}, ซีรีส์ /series/{slug}
+// เข้ามาด้วย slug เก่า หรือ prefix ผิดประเภท (เช่น ซีรีส์ผ่าน /movies/) → 301 ไป URL หลัก
+const canonicalPath = mediaPath(m);
+if (route.path !== canonicalPath) {
+  await navigateTo(canonicalPath, { redirectCode: 301 });
 }
 const isTv = m.mediaType === 'tv';
 
@@ -37,7 +39,7 @@ useSeoMeta({
 
 // ===== Structured data (JSON-LD) — Movie / TVSeries =====
 // AggregateRating + Review ใช้เฉพาะคะแนน/รีวิวจากผู้ใช้จริง (ตามแนวทาง review snippet ของ Google)
-const pageUrl = `${siteUrl.replace(/\/+$/, '')}/movies/${m.slug}`;
+const pageUrl = `${siteUrl.replace(/\/+$/, '')}${canonicalPath}`;
 const humanReviews = (m.reviews || []).filter((r: any) => !r.user?.isBot).slice(0, 5);
 const people = (names?: string | null) =>
   names ? names.split(',').map((n) => ({ '@type': 'Person', name: n.trim() })) : undefined;

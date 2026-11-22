@@ -7,7 +7,14 @@ const q = ref(route.query.q as string || '');
 const genre = ref(route.query.genre as string || '');
 const sort = ref(route.query.sort as string || 'popularity');
 const lang = ref(route.query.lang as string || '');
-const type = ref(route.query.type as string || ''); // movie | tv | '' (ทั้งหมด)
+// หน้านี้ใช้ทั้ง /movies และ /series (pages/series/index.vue) — ใต้ /series ล็อกเป็นซีรีส์
+const isSeries = route.path.startsWith('/series');
+const type = ref(isSeries ? 'tv' : (route.query.type as string || '')); // movie | tv | '' (ทั้งหมด)
+
+// URL เดิม /movies?type=tv → 301 ไป /series (คงตัวกรองอื่นไว้)
+if (!isSeries && route.query.type === 'tv') {
+  await navigateTo({ path: '/series', query: { ...route.query, type: undefined } }, { redirectCode: 301 });
+}
 const page = ref(Number(route.query.page) || 1);
 
 const query = computed(() => ({
@@ -30,18 +37,26 @@ const { data: genres } = await useFetch<{ items: any[] }>('/api/genres', {
   baseURL: config.public.apiBase,
 });
 
-watch([q, genre, sort, type, page], () => {
-  router.replace({ query: { ...query.value } });
+watch([q, genre, sort, page], () => {
+  router.replace({ query: { ...query.value, type: isSeries ? undefined : query.value.type, limit: undefined } });
 });
 
-// กดเมนู "หนัง" / "ซีรีส์" ตอนอยู่หน้านี้อยู่แล้ว → อัปเดตตัวกรองตาม URL
-watch(() => route.query.type, (t) => { type.value = (t as string) || ''; page.value = 1; });
+// เปลี่ยนประเภทจาก dropdown: ซีรีส์อยู่ที่ /series, หนัง/ทั้งหมดอยู่ที่ /movies
+watch(type, (t) => {
+  const filters = { ...query.value, type: undefined, page: undefined, limit: undefined };
+  if (t === 'tv' && !isSeries) navigateTo({ path: '/series', query: filters });
+  else if (t !== 'tv' && isSeries) navigateTo({ path: '/movies', query: { ...filters, type: t || undefined } });
+  else router.replace({ query: { ...filters, type: t || undefined } });
+});
+
+// กดเมนู "หนัง" ตอนอยู่หน้านี้อยู่แล้ว → อัปเดตตัวกรองตาม URL
+if (!isSeries) watch(() => route.query.type, (t) => { type.value = (t as string) || ''; page.value = 1; });
 
 const heading = computed(() => (type.value === 'tv' ? 'ซีรีส์ทั้งหมด' : type.value === 'movie' ? 'หนังทั้งหมด' : 'หนังและซีรีส์ทั้งหมด'));
 
 useSeoMeta({
   title: () => q.value ? `ค้นหา: ${q.value}` : heading.value,
-  description: 'สำรวจหนังจากทั่วโลก คัดสรรโดยชุมชนคนไทย',
+  description: isSeries ? 'สำรวจซีรีส์จากทั่วโลก อ่านรีวิวและคะแนนจากคนไทย' : 'สำรวจหนังจากทั่วโลก คัดสรรโดยชุมชนคนไทย',
   ogTitle: () => q.value ? `ค้นหา: ${q.value} - ติดจอ` : `${heading.value} - ติดจอ`,
   ogDescription: 'สำรวจหนังจากทั่วโลก คัดสรรโดยชุมชนคนไทย',
   ogImage: '/logo.jpg',

@@ -35,7 +35,7 @@ useSeoMeta({ title: 'Dashboard', robots: 'noindex' });
         <h2 class="font-bold mb-3">🔥 หนังยอดนิยม</h2>
         <ul class="space-y-2">
           <li v-for="m in data?.topMovies" :key="m.id" class="flex justify-between text-sm">
-            <NuxtLink :to="`/movies/${m.slug}`" class="hover:text-brand-600">{{ m.title }}</NuxtLink>
+            <NuxtLink :to="mediaPath(m)" class="hover:text-brand-600">{{ m.title }}</NuxtLink>
             <span class="text-gray-500">⭐ {{ m.averageRating?.toFixed(1) }} · {{ m.reviewCount }} รีวิว</span>
           </li>
         </ul>
@@ -46,7 +46,7 @@ useSeoMeta({ title: 'Dashboard', robots: 'noindex' });
         <ul class="space-y-2">
           <li v-for="r in data?.recentReviews" :key="r.id" class="text-sm">
             <span class="font-medium">{{ r.user.displayName }}</span>
-            รีวิว <NuxtLink :to="`/movies/${r.movie.slug}`" class="text-brand-600">{{ r.movie.title }}</NuxtLink>
+            รีวิว <NuxtLink :to="mediaPath(r.movie)" class="text-brand-600">{{ r.movie.title }}</NuxtLink>
             ({{ r.rating }}/10)
           </li>
         </ul>

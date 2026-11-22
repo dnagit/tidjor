@@ -12,13 +12,13 @@ export async function dashboard(req, res, next) {
         take: 10, orderBy: { createdAt: 'desc' },
         include: {
           user: { select: { username: true, displayName: true } },
-          movie: { select: { title: true, slug: true } },
+          movie: { select: { title: true, slug: true, mediaType: true } },
         },
       }),
       prisma.movie.findMany({
         take: 10,
         orderBy: { popularity: 'desc' },
-        select: { id: true, slug: true, title: true, posterUrl: true, averageRating: true, reviewCount: true },
+        select: { id: true, slug: true, title: true, posterUrl: true, averageRating: true, reviewCount: true, mediaType: true },
       }),
     ]);
     res.json({
@@ -99,7 +99,7 @@ export async function listReviews(req, res, next) {
       where, take, skip, orderBy: { createdAt: 'desc' },
       include: {
         user: { select: { username: true, displayName: true, isBot: true } },
-        movie: { select: { title: true, slug: true } },
+        movie: { select: { title: true, slug: true, mediaType: true } },
       },
     });
     res.json({ items });

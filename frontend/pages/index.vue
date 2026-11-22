@@ -80,7 +80,7 @@ useSeoMeta({
     <section v-if="newSeries?.items?.length" class="max-w-7xl mx-auto px-4 py-12">
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold">📺 ซีรีส์ใหม่</h2>
-        <NuxtLink to="/movies?type=tv&sort=releaseDate" class="text-brand-600 text-sm hover:underline">ดูทั้งหมด →</NuxtLink>
+        <NuxtLink to="/series?sort=releaseDate" class="text-brand-600 text-sm hover:underline">ดูทั้งหมด →</NuxtLink>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <MovieCard v-for="m in newSeries.items" :key="m.id" :movie="m" />
@@ -125,11 +125,11 @@ useSeoMeta({
       <h2 class="text-2xl font-bold mb-6">📝 รีวิวล่าสุด</h2>
       <div class="grid md:grid-cols-2 gap-4">
         <div v-for="r in feed?.items" :key="r.id" class="card p-4 flex gap-4">
-          <NuxtLink :to="`/movies/${r.movie.slug}`" class="shrink-0">
+          <NuxtLink :to="mediaPath(r.movie)" class="shrink-0">
             <img v-if="r.movie.posterUrl" :src="r.movie.posterUrl" class="w-20 h-28 object-cover rounded" />
           </NuxtLink>
           <div class="flex-1 min-w-0">
-            <NuxtLink :to="`/movies/${r.movie.slug}`" class="font-semibold hover:text-brand-600 block truncate">
+            <NuxtLink :to="mediaPath(r.movie)" class="font-semibold hover:text-brand-600 block truncate">
               {{ r.movie.title }}
             </NuxtLink>
             <div class="flex items-center gap-2 text-sm mt-1">

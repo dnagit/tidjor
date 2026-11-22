@@ -38,11 +38,11 @@ useSeoMeta({
     <h2 class="text-xl font-bold mb-4">รีวิวของ {{ u.displayName }}</h2>
     <div class="space-y-4">
       <div v-for="r in data.reviews" :key="r.id" class="card p-4 flex gap-4">
-        <NuxtLink :to="`/movies/${r.movie.slug}`" class="shrink-0">
+        <NuxtLink :to="mediaPath(r.movie)" class="shrink-0">
           <img v-if="r.movie.posterUrl" :src="r.movie.posterUrl" class="w-20 h-28 object-cover rounded" />
         </NuxtLink>
         <div class="flex-1">
-          <NuxtLink :to="`/movies/${r.movie.slug}`" class="font-semibold hover:text-brand-600">
+          <NuxtLink :to="mediaPath(r.movie)" class="font-semibold hover:text-brand-600">
             {{ r.movie.titleTh || r.movie.title }}
           </NuxtLink>
           <StarRating :model-value="r.rating" readonly size="sm" />

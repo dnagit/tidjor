@@ -95,7 +95,7 @@ export async function feed(req, res, next) {
       take, skip,
       include: {
         user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isBot: true } },
-        movie: { select: { id: true, slug: true, title: true, posterUrl: true } },
+        movie: { select: { id: true, slug: true, title: true, posterUrl: true, mediaType: true } },
       },
     });
     res.json({ items });

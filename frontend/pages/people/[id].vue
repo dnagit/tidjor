@@ -117,7 +117,7 @@ useHead({
           :is="c.slug ? NuxtLink : 'div'"
           v-for="c in list"
           :key="`${c.mediaType}-${c.tmdbId}`"
-          :to="c.slug ? `/movies/${c.slug}` : undefined"
+          :to="c.slug ? mediaPath(c) : undefined"
           class="card overflow-hidden"
           :class="c.slug ? 'hover:shadow-md transition group' : 'opacity-70'"
         >

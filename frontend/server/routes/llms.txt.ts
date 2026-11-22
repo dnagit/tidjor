@@ -12,11 +12,12 @@ export default defineEventHandler((event) => {
 ## หน้าหลัก (Main pages)
 - [หน้าแรก / Home](${site}/): หนังเข้าใหม่ ซีรีส์ใหม่ ยอดนิยม และรีวิวล่าสุด
 - [หนัง / Movies](${site}/movies?type=movie): ค้นหาและกรองหนังทั้งหมด (ตามหมวดหมู่ ปี คะแนน)
-- [ซีรีส์ / TV series](${site}/movies?type=tv): ค้นหาและกรองซีรีส์ทั้งหมด
+- [ซีรีส์ / TV series](${site}/series): ค้นหาและกรองซีรีส์ทั้งหมด
 - [รีวิว / Reviews](${site}/reviews): ฟีดรีวิวล่าสุด
 
 ## โครงสร้าง URL (URL patterns)
-- รายละเอียดหนังหรือซีรีส์: ${site}/movies/{slug} (มี JSON-LD แบบ Movie หรือ TVSeries)
+- รายละเอียดหนัง: ${site}/movies/{slug} (JSON-LD แบบ Movie)
+- รายละเอียดซีรีส์: ${site}/series/{slug} (JSON-LD แบบ TVSeries)
 - โปรไฟล์ผู้รีวิว: ${site}/u/{username}
 - แผนผังเว็บ: ${site}/sitemap.xml
 

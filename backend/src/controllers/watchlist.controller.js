@@ -8,7 +8,7 @@ export async function mine(req, res, next) {
       orderBy: { createdAt: 'desc' },
       include: {
         movie: {
-          select: { id: true, slug: true, title: true, titleTh: true, posterUrl: true, averageRating: true, releaseDate: true },
+          select: { id: true, slug: true, title: true, titleTh: true, posterUrl: true, averageRating: true, releaseDate: true, mediaType: true },
         },
       },
     });

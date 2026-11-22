@@ -1,4 +1,4 @@
-// /sitemap.xml — หน้าหลัก + หน้าหนัง/ซีรีส์ทุกเรื่อง (ดึง slug ทั้งหมดจาก /api/movies/sitemap ครั้งเดียว)
+// /sitemap.xml — หน้าหลัก + หน้าหนัง (/movies) และซีรีส์ (/series) ทุกเรื่อง (ดึง slug ทั้งหมดจาก /api/movies/sitemap ครั้งเดียว)
 interface SitemapItem { slug: string; mediaType: 'movie' | 'tv'; updatedAt: string }
 
 export default defineEventHandler(async (event) => {
@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   const urls: { loc: string; priority?: string; lastmod?: string }[] = [
     { loc: `${site}/`, priority: '1.0' },
     { loc: `${site}/movies?type=movie`, priority: '0.8' },
-    { loc: `${site}/movies?type=tv`, priority: '0.8' },
+    { loc: `${site}/series`, priority: '0.8' },
     { loc: `${site}/reviews`, priority: '0.6' },
   ];
 
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
     const { items } = await $fetch<{ items: SitemapItem[] }>(`${api}/api/movies/sitemap`);
     for (const m of items) {
       urls.push({
-        loc: `${site}/movies/${encodeURIComponent(m.slug)}`,
+        loc: `${site}/${m.mediaType === 'tv' ? 'series' : 'movies'}/${encodeURIComponent(m.slug)}`,
         priority: '0.7',
         lastmod: m.updatedAt?.slice(0, 10),
       });
