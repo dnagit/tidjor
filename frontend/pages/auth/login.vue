@@ -38,6 +38,7 @@ useSeoMeta({ title: 'เข้าสู่ระบบ', robots: 'noindex' });
         </button>
       </form>
 
+      <!-- ปิดไว้ก่อน: ใช้แค่ login/register ด้วยอีเมล (เปิดใช้ social login ค่อยเอา comment ออก)
       <div class="flex items-center my-6">
         <span class="flex-1 border-t" />
         <span class="px-3 text-xs text-gray-400">หรือ</span>
@@ -55,6 +56,7 @@ useSeoMeta({ title: 'เข้าสู่ระบบ', robots: 'noindex' });
           <span>💚</span> เข้าสู่ระบบด้วย LINE
         </button>
       </div>
+      -->
 
       <p class="text-center mt-6 text-sm text-gray-600">
         ยังไม่มีบัญชี?
