@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+const GOOGLE_FONTS = 'https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap';
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-01',
   devtools: { enabled: true },
@@ -26,16 +28,17 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#FFC107' },
       ],
       link: [
-        { rel: 'icon', type: 'image/jpeg', href: '/logo.jpg' },
-        { rel: 'apple-touch-icon', href: '/logo.jpg' },
+        // ไอคอนไฟล์เล็ก (เดิมใช้ logo.jpg 111 KB ซึ่งแย่งแบนด์วิดท์กับรูปแรกของหน้า)
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
         { rel: 'preconnect', href: 'https://image.tmdb.org' },
-        // ฟอนต์: โหลดจาก <head> ตรง ๆ (ไม่ใช้ @import ใน CSS ที่ต้องรอเป็นทอด ๆ) และตัดน้ำหนักที่ไม่ได้ใช้
+        // ฟอนต์: โหลดแบบไม่บล็อกการแสดงผล (media=print แล้วสลับเป็น all เมื่อโหลดเสร็จ)
+        // หน้าแสดงด้วยฟอนต์ระบบก่อน แล้วค่อยเปลี่ยนเป็นฟอนต์จริง — ไม่ต้องรอไฟล์จากอีกโดเมนก่อนวาดหน้า
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-        {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap',
-        },
+        { rel: 'preload', as: 'style', href: GOOGLE_FONTS },
+        { rel: 'stylesheet', href: GOOGLE_FONTS, media: 'print', onload: "this.media='all'" },
       ],
     },
   },

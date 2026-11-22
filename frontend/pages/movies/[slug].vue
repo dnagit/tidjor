@@ -116,11 +116,11 @@ async function toggleWatchlist() {
   <article>
     <!-- Hero / Backdrop -->
     <div class="relative h-80 bg-gray-900">
-      <!-- ภาพพื้นหลังแสดงจาง (opacity 40) → มือถือได้ w780 แทน w1280 แม้จอความละเอียดสูง -->
+      <!-- ภาพพื้นหลังแสดงจาง (opacity 40) → มือถือได้ w300/w780 แทน w1280 แม้จอความละเอียดสูง -->
       <img
         v-if="m.backdropUrl"
         :src="tmdbImg(m.backdropUrl, 'w1280')"
-        :srcset="tmdbSrcset(m.backdropUrl, [780, 1280])"
+        :srcset="tmdbSrcset(m.backdropUrl, [300, 780, 1280])"
         sizes="(min-width: 1024px) 100vw, 33vw"
         alt=""
         fetchpriority="high"

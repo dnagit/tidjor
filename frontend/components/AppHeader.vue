@@ -26,7 +26,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
     <div class="max-w-7xl mx-auto px-4 h-20 flex items-center gap-4">
       <!-- Logo -->
       <NuxtLink to="/" class="flex items-center shrink-0" @click="mobileOpen = false">
-        <img src="/logo.jpg" alt="ติดจอ" class="h-14 w-auto rounded-lg object-contain" />
+        <img src="/logo-112.webp" srcset="/logo-112.webp 2x, /logo-168.webp 3x" width="56" height="56" alt="ติดจอ" class="h-14 w-auto rounded-lg object-contain" />
       </NuxtLink>
 
       <!-- Desktop nav -->
