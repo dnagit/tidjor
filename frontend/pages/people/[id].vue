@@ -73,6 +73,7 @@ useHead({
         v-if="p.profileUrl"
         :src="p.profileUrl"
         :alt="p.name"
+        fetchpriority="high"
         width="200"
         height="300"
         class="w-40 sm:w-52 aspect-[2/3] object-cover rounded-xl shadow mx-auto sm:mx-0 shrink-0"
@@ -122,7 +123,7 @@ useHead({
           :class="c.slug ? 'hover:shadow-md transition group' : 'opacity-70'"
         >
           <div class="aspect-[2/3] bg-gray-100 overflow-hidden relative">
-            <img v-if="c.posterUrl" :src="c.posterUrl" :alt="c.title" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition" />
+            <img v-if="c.posterUrl" :src="c.posterUrl" :srcset="tmdbSrcset(c.posterUrl, [185, 342])" sizes="(min-width: 1024px) 16vw, (min-width: 768px) 25vw, 50vw" :alt="c.title" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition" />
             <div v-else class="w-full h-full flex items-center justify-center text-4xl">🎬</div>
             <span v-if="c.averageRating" class="absolute top-2 right-2 text-xs font-medium bg-ink/80 text-white rounded px-1.5 py-0.5">
               ⭐ {{ c.averageRating.toFixed(1) }}

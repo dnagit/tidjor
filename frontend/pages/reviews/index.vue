@@ -17,7 +17,7 @@ useSeoMeta({
       <article v-for="r in data?.items" :key="r.id" class="card p-4">
         <div class="flex gap-4">
           <NuxtLink :to="mediaPath(r.movie)" class="shrink-0">
-            <img v-if="r.movie.posterUrl" :src="r.movie.posterUrl" class="w-20 h-28 object-cover rounded" />
+            <img v-if="r.movie.posterUrl" :src="tmdbImg(r.movie.posterUrl, 'w185')" width="80" height="112" loading="lazy" alt="" class="w-20 h-28 object-cover rounded" />
           </NuxtLink>
           <div class="flex-1">
             <NuxtLink :to="mediaPath(r.movie)" class="font-bold hover:text-brand-600">

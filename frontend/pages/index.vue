@@ -1,37 +1,39 @@
 <script setup lang="ts">
 const config = useRuntimeConfig();
 
-const { data: popular } = await useFetch<{ items: any[] }>('/api/movies', {
-  baseURL: config.public.apiBase,
-  query: { sort: 'popularity', order: 'desc', limit: 12 },
-});
+const api = (query: Record<string, any>, path = '/api/movies') =>
+  useFetch<{ items: any[] }>(path, { baseURL: config.public.apiBase, query });
 
-const { data: topRated } = await useFetch<{ items: any[] }>('/api/movies', {
-  baseURL: config.public.apiBase,
-  query: { sort: 'averageRating', order: 'desc', limit: 12 },
-});
+// ดึงทุกแถวพร้อมกัน (เดิม await ทีละตัว 6 รอบ → หน้าแรกตอบช้า)
+const [
+  { data: popular },
+  { data: topRated },
+  { data: newReleases },
+  { data: newSeries },
+  { data: thaiMovies },
+  { data: feed },
+] = await Promise.all([
+  api({ sort: 'popularity', order: 'desc', limit: 12 }),
+  api({ sort: 'averageRating', order: 'desc', limit: 12 }),
+  // หนังเข้าใหม่ — เรียงตามวันฉายล่าสุด เฉพาะที่ฉายแล้ว
+  api({ type: 'movie', sort: 'releaseDate', order: 'desc', released: 1, limit: 12 }),
+  // ซีรีส์ใหม่ — เรียงตามวันเริ่มออกอากาศล่าสุด เฉพาะที่ออกอากาศแล้ว
+  api({ type: 'tv', sort: 'releaseDate', order: 'desc', released: 1, limit: 12 }),
+  // หนังไทย — เรียงตามวันฉายล่าสุด
+  api({ type: 'movie', lang: 'th', sort: 'releaseDate', order: 'desc', limit: 12 }),
+  api({ limit: 6 }, '/api/reviews/feed'),
+]);
 
-// หนังเข้าใหม่ — เรียงตามวันฉายล่าสุด เฉพาะที่ฉายแล้ว
-const { data: newReleases } = await useFetch<{ items: any[] }>('/api/movies', {
-  baseURL: config.public.apiBase,
-  query: { type: 'movie', sort: 'releaseDate', order: 'desc', released: 1, limit: 12 },
-});
-
-// ซีรีส์ใหม่ — เรียงตามวันเริ่มออกอากาศล่าสุด เฉพาะที่ออกอากาศแล้ว
-const { data: newSeries } = await useFetch<{ items: any[] }>('/api/movies', {
-  baseURL: config.public.apiBase,
-  query: { type: 'tv', sort: 'releaseDate', order: 'desc', released: 1, limit: 12 },
-});
-
-// หนังไทย — เรียงตามวันฉายล่าสุด
-const { data: thaiMovies } = await useFetch<{ items: any[] }>('/api/movies', {
-  baseURL: config.public.apiBase,
-  query: { type: 'movie', lang: 'th', sort: 'releaseDate', order: 'desc', limit: 12 },
-});
-
-const { data: feed } = await useFetch<{ items: any[] }>('/api/reviews/feed', {
-  baseURL: config.public.apiBase,
-  query: { limit: 6 },
+// โหลดรูป banner (LCP) ทันทีตั้งแต่อ่าน <head> ไม่ต้องรอ parse ถึง <img>
+useHead({
+  link: [{
+    rel: 'preload',
+    as: 'image',
+    href: '/banner.webp',
+    imagesrcset: '/banner-960.webp 960w, /banner-1280.webp 1280w, /banner.webp 1942w',
+    imagesizes: '100vw',
+    fetchpriority: 'high',
+  }],
 });
 
 useSeoMeta({
@@ -55,7 +57,7 @@ useSeoMeta({
       <!-- รูปแรกที่เห็น (LCP): WebP + ขนาดตามจอ + โหลดก่อน + จองพื้นที่กันหน้ากระโดด -->
       <img
         src="/banner.webp"
-        srcset="/banner-960.webp 960w, /banner.webp 1942w"
+        srcset="/banner-960.webp 960w, /banner-1280.webp 1280w, /banner.webp 1942w"
         sizes="100vw"
         width="1942"
         height="809"
@@ -126,7 +128,7 @@ useSeoMeta({
       <div class="grid md:grid-cols-2 gap-4">
         <div v-for="r in feed?.items" :key="r.id" class="card p-4 flex gap-4">
           <NuxtLink :to="mediaPath(r.movie)" class="shrink-0">
-            <img v-if="r.movie.posterUrl" :src="r.movie.posterUrl" class="w-20 h-28 object-cover rounded" />
+            <img v-if="r.movie.posterUrl" :src="tmdbImg(r.movie.posterUrl, 'w185')" width="80" height="112" loading="lazy" alt="" class="w-20 h-28 object-cover rounded" />
           </NuxtLink>
           <div class="flex-1 min-w-0">
             <NuxtLink :to="mediaPath(r.movie)" class="font-semibold hover:text-brand-600 block truncate">

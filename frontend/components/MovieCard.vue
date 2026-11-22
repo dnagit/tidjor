@@ -22,7 +22,11 @@ defineProps<{
       </span>
       <img
         v-if="movie.posterUrl"
-        :src="movie.posterUrl"
+        :src="tmdbImg(movie.posterUrl, 'w342')"
+        :srcset="tmdbSrcset(movie.posterUrl, [185, 342, 500])"
+        sizes="(min-width: 1024px) 16vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
+        width="342"
+        height="513"
         :alt="movie.titleTh || movie.title"
         class="w-full h-full object-cover group-hover:scale-105 transition"
         loading="lazy"

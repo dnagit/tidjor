@@ -29,6 +29,13 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/jpeg', href: '/logo.jpg' },
         { rel: 'apple-touch-icon', href: '/logo.jpg' },
         { rel: 'preconnect', href: 'https://image.tmdb.org' },
+        // ฟอนต์: โหลดจาก <head> ตรง ๆ (ไม่ใช้ @import ใน CSS ที่ต้องรอเป็นทอด ๆ) และตัดน้ำหนักที่ไม่ได้ใช้
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap',
+        },
       ],
     },
   },
@@ -44,6 +51,8 @@ export default defineNuxtConfig({
   // หน้า admin ใช้ session ฝั่ง client (localStorage) → ปิด SSR กันหลุด login ตอน refresh
   routeRules: {
     '/admin/**': { ssr: false },
+    // หน้าแรกเหมือนกันทุกคน (สถานะ login อยู่ฝั่ง browser) → cache ผล render 5 นาที ลด TTFB
+    '/': { swr: 300 },
   },
 
   // โปรเจกต์อยู่ใน ~/Documents (iCloud sync) → iCloud คอยแตะไฟล์ .nuxt/.DS_Store ทำให้ dev restart วนไม่หยุด

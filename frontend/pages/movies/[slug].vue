@@ -33,7 +33,7 @@ useSeoMeta({
   description: m.overview || `รีวิวและให้คะแนน${isTv ? 'ซีรีส์' : 'หนัง'} ${m.title}`,
   ogTitle: `${m.titleTh || m.title} - ติดจอ`,
   ogDescription: m.overview,
-  ogImage: m.backdropUrl || m.posterUrl || '/logo.jpg',
+  ogImage: tmdbImg(m.backdropUrl, 'w1280') || tmdbImg(m.posterUrl, 'w780') || '/logo.jpg',
   twitterCard: 'summary_large_image',
 });
 
@@ -49,7 +49,7 @@ const schema: Record<string, any> = {
   name: m.titleTh || m.title,
   alternateName: m.titleEn && m.titleEn !== (m.titleTh || m.title) ? m.titleEn : undefined,
   url: pageUrl,
-  image: m.posterUrl || undefined,
+  image: tmdbImg(m.posterUrl, 'w500'),
   description: m.overview || undefined,
   genre: m.genres?.map((g: any) => g.nameTh),
   inLanguage: m.originalLanguage || undefined,
@@ -116,7 +116,16 @@ async function toggleWatchlist() {
   <article>
     <!-- Hero / Backdrop -->
     <div class="relative h-80 bg-gray-900">
-      <img v-if="m.backdropUrl" :src="m.backdropUrl" class="w-full h-full object-cover opacity-40" />
+      <!-- ภาพพื้นหลังแสดงจาง (opacity 40) → มือถือได้ w780 แทน w1280 แม้จอความละเอียดสูง -->
+      <img
+        v-if="m.backdropUrl"
+        :src="tmdbImg(m.backdropUrl, 'w1280')"
+        :srcset="tmdbSrcset(m.backdropUrl, [780, 1280])"
+        sizes="(min-width: 1024px) 100vw, 33vw"
+        alt=""
+        fetchpriority="high"
+        class="w-full h-full object-cover opacity-40"
+      />
       <div class="absolute inset-0 bg-gradient-to-t from-white via-white/60 to-transparent" />
     </div>
 
@@ -124,9 +133,14 @@ async function toggleWatchlist() {
       <div class="flex flex-col md:flex-row gap-8">
         <img
           v-if="m.posterUrl"
-          :src="m.posterUrl"
+          :src="tmdbImg(m.posterUrl, 'w342')"
+          :srcset="tmdbSrcset(m.posterUrl, [342, 500])"
+          sizes="(min-width: 768px) 256px, 192px"
+          width="342"
+          height="513"
           :alt="m.titleTh || m.title"
-          class="w-48 md:w-64 rounded-xl2 shadow-xl"
+          fetchpriority="high"
+          class="w-48 md:w-64 h-auto rounded-xl2 shadow-xl"
         />
         <div class="flex-1 pt-4 md:pt-32">
           <h1 class="text-3xl md:text-4xl font-bold mb-2">{{ m.titleTh || m.title }}</h1>
@@ -206,7 +220,7 @@ async function toggleWatchlist() {
           >
             <img
               v-if="c.photoUrl"
-              :src="c.photoUrl"
+              :src="tmdbImg(c.photoUrl, 'w185')"
               :alt="c.name"
               loading="lazy"
               class="w-full aspect-square object-cover rounded-full mb-2 group-hover:ring-4 ring-brand-300 transition"
