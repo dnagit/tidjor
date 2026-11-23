@@ -219,23 +219,36 @@ export async function generateReview(movie, bot) {
   return saved;
 }
 
-export async function generateReviews({ limit = 10, slug } = {}) {
+// series = จำนวนช่องที่กันไว้ให้ซีรีส์ในแต่ละรอบ (หนังใหม่มีเยอะกว่ามาก ถ้าปนกันซีรีส์แทบไม่ถูกเลือก)
+export async function generateReviews({ limit = 10, slug, series = Number(process.env.AI_REVIEW_SERIES ?? 2) } = {}) {
   const bots = await getBotUsers();
   const botIds = bots.map((b) => b.id);
-  const movies = await prisma.movie.findMany({
-    where: slug
-      ? { slug }
-      // หนัง/ซีรีส์ที่ฉายแล้วและยังไม่มีบอทตัวไหนรีวิว
-      : { isPublished: true, status: 'RELEASED', releaseDate: { lte: new Date() }, reviews: { none: { userId: { in: botIds } } } },
-    orderBy: { releaseDate: { sort: 'desc', nulls: 'last' } }, // เรื่องใหม่ก่อน (หนังและซีรีส์ปนกัน)
+  const include = {
+    genres: { include: { genre: true } },
+    reviews: { where: { userId: { in: botIds } }, select: { userId: true } },
+  };
+  // เรื่องที่ฉายแล้วและยังไม่มีบอทตัวไหนรีวิว เรื่องใหม่ก่อน
+  const queue = (mediaType) => prisma.movie.findMany({
+    where: { mediaType, isPublished: true, status: 'RELEASED', releaseDate: { lte: new Date() }, reviews: { none: { userId: { in: botIds } } } },
+    orderBy: { releaseDate: { sort: 'desc', nulls: 'last' } },
     take: limit,
-    include: {
-      genres: { include: { genre: true } },
-      reviews: { where: { userId: { in: botIds } }, select: { userId: true } },
-    },
+    include,
   });
 
-  console.log(`[ai-review] ${movies.length} เรื่อง (model: ${MODEL}, web search: ${WEB_SEARCH})`);
+  let movies;
+  if (slug) {
+    movies = await prisma.movie.findMany({ where: { slug }, include });
+  } else {
+    const [tv, film] = await Promise.all([queue('tv'), queue('movie')]);
+    // ซีรีส์ตามโควตา → หนังให้ครบ limit → ถ้าหนังไม่พอ เติมซีรีส์ที่เหลือ
+    const tvPick = tv.slice(0, Math.min(series, limit));
+    const filmPick = film.slice(0, limit - tvPick.length);
+    const tvExtra = tv.slice(tvPick.length, limit - filmPick.length);
+    movies = [...filmPick, ...tvPick, ...tvExtra];
+  }
+
+  const tvCount = movies.filter((m) => m.mediaType === 'tv').length;
+  console.log(`[ai-review] ${movies.length} เรื่อง (หนัง ${movies.length - tvCount}, ซีรีส์ ${tvCount}) model: ${MODEL}, web search: ${WEB_SEARCH}`);
   let done = 0;
   for (const movie of movies) {
     // รีวิวซ้ำ (ระบุ slug) ใช้บอทคนเดิม ไม่งั้นสุ่มคน
