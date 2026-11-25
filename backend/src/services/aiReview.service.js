@@ -11,11 +11,18 @@ import { recomputeMovieStats } from './movieStats.service.js';
 //   3) write: ให้ Claude เขียนรีวิวภาษาไทยจากโน้ต → JSON → บันทึกเป็น Review ของบัญชีบอท
 // ============================================================
 
+// เขียนรีวิวด้วย Sonnet (คุณภาพภาษา) / ค้นข้อมูลด้วย Haiku (ถูกกว่ามาก)
 const MODEL = process.env.AI_REVIEW_MODEL || 'claude-sonnet-5-5';
+const RESEARCH_MODEL = process.env.AI_REVIEW_RESEARCH_MODEL || 'claude-haiku-5-5';
+const isHaiku = (m) => m.startsWith('claude-haiku');
 const MAX_SEARCHES = Number(process.env.AI_REVIEW_MAX_SEARCHES || 5);
 const WEB_SEARCH = process.env.AI_REVIEW_WEB_SEARCH !== 'false';
 // ถ้าโมเดลปฏิเสธคำขอ ให้ API ส่งต่อไปโมเดลสำรองให้อัตโนมัติ
+// (Haiku ไม่มี server-side fallback — ห้ามส่ง fallbacks ไป)
 const FALLBACK = { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' };
+const fallbackFor = (m) => (isHaiku(m) ? {} : FALLBACK);
+// web search รุ่น dynamic filtering (20260209) ใช้ได้กับ Sonnet/Opus — Haiku ใช้รุ่นพื้นฐาน
+const searchToolFor = (m) => (isHaiku(m) ? 'web_search_20250305' : 'web_search_20260209');
 
 // บัญชีบอทหลายคน สไตล์การเขียนต่างกัน — ชื่อไม่มีคำว่า AI แต่ทุกคนเป็น isBot (คะแนนนับรวมในคะแนนหนัง)
 // และหน้าเว็บต้องแสดง <AiBadge> ทุกที่ที่โชว์ชื่อผู้รีวิว
@@ -120,11 +127,11 @@ async function research(dossier, kind) {
 
   for (let i = 0; i < 4; i++) {
     response = await client.beta.messages.create({
-      model: MODEL,
+      model: RESEARCH_MODEL,
       max_tokens: 16000,
-      ...FALLBACK,
+      ...fallbackFor(RESEARCH_MODEL),
       output_config: { effort: 'medium' },
-      tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: MAX_SEARCHES }],
+      tools: [{ type: searchToolFor(RESEARCH_MODEL), name: 'web_search', max_uses: MAX_SEARCHES }],
       messages,
     });
     if (response.stop_reason !== 'pause_turn') break;
@@ -248,7 +255,7 @@ export async function generateReviews({ limit = 10, slug, series = Number(proces
   }
 
   const tvCount = movies.filter((m) => m.mediaType === 'tv').length;
-  console.log(`[ai-review] ${movies.length} เรื่อง (หนัง ${movies.length - tvCount}, ซีรีส์ ${tvCount}) model: ${MODEL}, web search: ${WEB_SEARCH}`);
+  console.log(`[ai-review] ${movies.length} เรื่อง (หนัง ${movies.length - tvCount}, ซีรีส์ ${tvCount}) model: ${MODEL} (research: ${RESEARCH_MODEL}), web search: ${WEB_SEARCH}`);
   let done = 0;
   for (const movie of movies) {
     // รีวิวซ้ำ (ระบุ slug) ใช้บอทคนเดิม ไม่งั้นสุ่มคน
