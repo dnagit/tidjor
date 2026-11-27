@@ -37,6 +37,12 @@ const { data: genres } = await useFetch<{ items: any[] }>('/api/genres', {
   baseURL: config.public.apiBase,
 });
 
+// พิมพ์ค้นหาในหน้านี้ → นับเมื่อหยุดพิมพ์ 1.5 วินาที (ไม่นับทุกตัวอักษร)
+const trackSearch = useDebounceFn((term: string) => {
+  if (term.trim()) track('search', { search_term: term.trim(), search_from: isSeries ? 'series_page' : 'movies_page' });
+}, 1500);
+watch(q, (v) => trackSearch(v));
+
 watch([q, genre, sort, page], () => {
   router.replace({ query: { ...query.value, type: isSeries ? undefined : query.value.type, limit: undefined } });
 });

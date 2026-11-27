@@ -7,6 +7,7 @@ const mobileOpen = ref(false);
 
 function submitSearch() {
   if (search.value.trim()) {
+    track('search', { search_term: search.value.trim(), search_from: 'header' });
     router.push({ path: '/movies', query: { q: search.value.trim() } });
     mobileOpen.value = false;
   }

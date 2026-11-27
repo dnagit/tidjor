@@ -12,6 +12,7 @@ async function submit() {
   errorMsg.value = '';
   try {
     await auth.login(email.value, password.value);
+    track('login', { method: 'email' });
     await navigateTo((route.query.next as string) || '/');
   } catch (e: any) {
     errorMsg.value = e?.data?.error === 'invalid_credentials'

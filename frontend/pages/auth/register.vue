@@ -11,6 +11,7 @@ async function submit() {
   errorMsg.value = '';
   try {
     await auth.register(email.value, password.value, displayName.value);
+    track('sign_up', { method: 'email' });
     await navigateTo('/');
   } catch (e: any) {
     errorMsg.value = e?.data?.error === 'email_taken'

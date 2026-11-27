@@ -97,6 +97,7 @@ async function submitReview() {
   }
   try {
     await api.post('/api/reviews', { movieId: m.id, ...form.value });
+    track('submit_review', { ...mediaParams(m), rating: form.value.rating, has_spoiler: form.value.hasSpoiler });
     showForm.value = false;
     await refreshNuxtData();
     location.reload();
@@ -108,6 +109,7 @@ async function submitReview() {
 async function toggleWatchlist() {
   if (!auth.isAuthenticated) return navigateTo('/auth/login');
   await api.post('/api/watchlist', { movieId: m.id });
+  track('add_to_watchlist', mediaParams(m));
   alert('เพิ่มเข้า watchlist แล้ว ⭐');
 }
 </script>
@@ -172,9 +174,9 @@ async function toggleWatchlist() {
           <p class="leading-relaxed text-gray-700 mb-6">{{ m.overview }}</p>
 
           <div class="flex gap-3">
-            <button class="btn-primary" @click="showForm = !showForm">✍️ เขียนรีวิว</button>
+            <button class="btn-primary" @click="showForm = !showForm; if (showForm) track('open_review_form', mediaParams(m))">✍️ เขียนรีวิว</button>
             <button class="btn-outline" @click="toggleWatchlist">⭐ เพิ่มใน Watchlist</button>
-            <a v-if="m.trailerUrl" :href="m.trailerUrl" target="_blank" class="btn-ghost">▶️ ดูตัวอย่าง</a>
+            <a v-if="m.trailerUrl" :href="m.trailerUrl" target="_blank" rel="noopener" class="btn-ghost" @click="track('view_trailer', mediaParams(m))">▶️ ดูตัวอย่าง</a>
           </div>
         </div>
       </div>
