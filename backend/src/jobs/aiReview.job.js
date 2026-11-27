@@ -6,7 +6,7 @@ import { generateReviews } from '../services/aiReview.service.js';
 //
 // env:
 //   AI_REVIEW_CRON=0 9 * * *   # เวลาที่รัน (เวลาไทย) — ไม่ตั้ง = ปิด job
-//   AI_REVIEW_DAILY=5          # จำนวนรีวิวต่อรอบ
+//   AI_REVIEW_DAILY=8          # จำนวนรีวิวต่อรอบ
 //   AI_REVIEW_SERIES=2         # ในจำนวนนั้นกันไว้ให้ซีรีส์กี่เรื่อง (ที่เหลือเป็นหนัง)
 // ============================================================
 
@@ -18,7 +18,7 @@ export function startAiReviewJob() {
     return;
   }
 
-  const limit = Number(process.env.AI_REVIEW_DAILY || 5);
+  const limit = Number(process.env.AI_REVIEW_DAILY || 8);
   let running = false;
 
   cron.schedule(schedule, async () => {
