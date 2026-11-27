@@ -48,6 +48,7 @@ export default defineNuxtConfig({
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:4000',
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
       siteName: process.env.NUXT_PUBLIC_SITE_NAME || 'ติดจอ',
+      gaId: process.env.NUXT_PUBLIC_GA_ID || '',
     },
   },
 
