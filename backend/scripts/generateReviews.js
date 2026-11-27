@@ -19,7 +19,9 @@ import { generateReviews } from '../src/services/aiReview.service.js';
 //   AI_REVIEW_MAX_SEARCHES=5      # จำนวนครั้งค้นเว็บสูงสุดต่อเรื่อง
 // ============================================================
 
-const [, , arg] = process.argv;
+// รับได้ทั้ง "1", "--limit 1", "--limit=1"
+const args = process.argv.slice(2).join(' ').replace(/--limit[=\s]*/, '').trim().split(/\s+/);
+const [arg] = args;
 const opts = arg && Number.isNaN(Number(arg)) ? { slug: arg, limit: 1 } : { limit: Number(arg) || 10 };
 
 generateReviews(opts)
