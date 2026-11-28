@@ -15,7 +15,7 @@ defineProps<{
 </script>
 
 <template>
-  <NuxtLink :to="mediaPath(movie)" class="card overflow-hidden hover:shadow-md transition group">
+  <NuxtLink :to="mediaPath(movie)" class="card block h-full overflow-hidden hover:shadow-md transition group">
     <div class="aspect-[2/3] bg-gray-100 overflow-hidden relative">
       <span v-if="movie.mediaType === 'tv'" class="absolute top-2 left-2 z-10 text-xs font-medium bg-ink/80 text-white rounded px-1.5 py-0.5">
         ซีรีส์{{ movie.numberOfSeasons ? ` · ${movie.numberOfSeasons} ซีซั่น` : '' }}

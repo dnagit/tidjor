@@ -46,7 +46,14 @@ export async function refreshOne(movie) {
     set('numberOfSeasons', fresh.numberOfSeasons);
     set('numberOfEpisodes', fresh.numberOfEpisodes);
   }
-  if (!Object.keys(data).length) return { changed: false };
+  // ความนิยมเปลี่ยนทุกวัน → อัปเดตแยก และคง updatedAt เดิม (ไม่ให้ lastmod ใน sitemap เปลี่ยนทุกวัน)
+  if (!Object.keys(data).length) {
+    if (fresh.popularity != null && fresh.popularity !== movie.popularity) {
+      await prisma.movie.update({ where: { id: movie.id }, data: { popularity: fresh.popularity, updatedAt: movie.updatedAt } });
+    }
+    return { changed: false };
+  }
+  if (fresh.popularity != null) data.popularity = fresh.popularity;
 
   if (data.imdbId) {
     // imdbId เป็น unique — ถ้าชนกับเรื่องอื่น ไม่ต้องอัปเดตช่องนี้
@@ -70,6 +77,7 @@ const select = {
   id: true, slug: true, tmdbId: true, mediaType: true, title: true, titleTh: true, posterUrl: true, backdropUrl: true,
   overview: true, tagline: true, trailerUrl: true, releaseDate: true, runtime: true, status: true, director: true,
   studio: true, imdbId: true, cast: true, numberOfSeasons: true, numberOfEpisodes: true,
+  popularity: true, updatedAt: true,
 };
 
 async function refreshMany(movies, label) {

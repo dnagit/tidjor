@@ -73,6 +73,7 @@ export function mapTmdbMovie(tmdb, slug) {
   const trailer = tmdb.videos?.results?.find(v => v.site === 'YouTube' && v.type === 'Trailer');
   return {
     tmdbId: tmdb.id,
+    popularity: tmdb.popularity ?? 0, // ความนิยมจาก TMDB (ใช้เรียง "ยอดนิยม")
     imdbId: tmdb.imdb_id,
     source: 'TMDB',
     slug,
@@ -113,6 +114,7 @@ export function mapTmdbTv(tmdb, slug) {
   return {
     tmdbId: tmdb.id,
     mediaType: 'tv',
+    popularity: tmdb.popularity ?? 0,
     imdbId: tmdb.external_ids?.imdb_id || null,
     source: 'TMDB',
     slug,
