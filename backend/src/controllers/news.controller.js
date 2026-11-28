@@ -123,3 +123,43 @@ export async function generate(req, res) {
     .finally(() => { generating = false; });
   res.status(202).json({ status: 'started' });
 }
+
+// ===== คอมเมนต์ใต้ข่าว =====
+const commentUser = { select: { id: true, username: true, displayName: true, avatarUrl: true } };
+
+export async function listComments(req, res, next) {
+  try {
+    const items = await prisma.newsComment.findMany({
+      where: { newsId: req.params.id, isHidden: false },
+      orderBy: { createdAt: 'asc' },
+      take: 200,
+      include: { user: commentUser },
+    });
+    res.json({ items });
+  } catch (err) { next(err); }
+}
+
+export async function addComment(req, res, next) {
+  try {
+    const content = (req.body.content || '').trim();
+    if (!content) return res.status(400).json({ error: 'content_required' });
+    if (content.length > 2000) return res.status(400).json({ error: 'too_long' });
+    const news = await prisma.newsArticle.findFirst({ where: { id: req.params.id, isPublished: true }, select: { id: true } });
+    if (!news) return res.status(404).json({ error: 'not_found' });
+    const comment = await prisma.newsComment.create({
+      data: { newsId: news.id, userId: req.user.id, content },
+      include: { user: commentUser },
+    });
+    res.status(201).json(comment);
+  } catch (err) { next(err); }
+}
+
+export async function removeComment(req, res, next) {
+  try {
+    const c = await prisma.newsComment.findUnique({ where: { id: req.params.commentId } });
+    if (!c) return res.status(404).json({ error: 'not_found' });
+    if (c.userId !== req.user.id && req.user.role === 'USER') return res.status(403).json({ error: 'forbidden' });
+    await prisma.newsComment.delete({ where: { id: c.id } });
+    res.status(204).end();
+  } catch (err) { next(err); }
+}

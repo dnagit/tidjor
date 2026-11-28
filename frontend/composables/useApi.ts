@@ -33,6 +33,6 @@ export const useApi = () => {
     get:    <T = any>(path: string, query?: any) => call<T>(path, { method: 'GET', query }),
     post:   <T = any>(path: string, body?: any) => call<T>(path, { method: 'POST', body }),
     patch:  <T = any>(path: string, body?: any) => call<T>(path, { method: 'PATCH', body }),
-    delete: <T = any>(path: string) => call<T>(path, { method: 'DELETE' }),
+    delete: <T = any>(path: string, body?: any) => call<T>(path, { method: 'DELETE', body }),
   };
 };

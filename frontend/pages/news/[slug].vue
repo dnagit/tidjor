@@ -92,6 +92,8 @@ useHead({
         </template>
       </div>
 
+      <ShareButtons class="mt-6" :title="a.title" :path="`/news/${a.slug}`" content-type="news" :item-id="a.slug" />
+
       <NuxtLink v-if="a.movie" :to="mediaPath(a.movie)" class="card p-4 mt-8 flex gap-4 items-center hover:shadow-md transition">
         <img v-if="a.movie.posterUrl" :src="tmdbImg(a.movie.posterUrl, 'w185')" width="64" height="96" loading="lazy" alt="" class="w-16 h-24 object-cover rounded" />
         <div>
@@ -110,6 +112,8 @@ useHead({
         </ul>
       </section>
     </article>
+
+    <NewsComments :news-id="a.id" />
 
     <section v-if="a.related?.length" class="mt-12">
       <h2 class="text-xl font-bold mb-4">ข่าวล่าสุด</h2>

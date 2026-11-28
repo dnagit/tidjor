@@ -17,6 +17,7 @@ export default defineEventHandler(async (event) => {
     { loc: `${site}/reviews`, priority: '0.6' },
     { loc: `${site}/news`, priority: '0.7' },
     { loc: `${site}/upcoming`, priority: '0.8' },
+    { loc: `${site}/lists`, priority: '0.7' },
     { loc: `${site}/privacy`, priority: '0.2' },
   ];
 
@@ -32,6 +33,10 @@ export default defineEventHandler(async (event) => {
     const news = await $fetch<{ items: { slug: string; updatedAt: string }[] }>(`${api}/api/news/sitemap`);
     for (const n of news.items) {
       urls.push({ loc: `${site}/news/${encodeURIComponent(n.slug)}`, priority: '0.6', lastmod: n.updatedAt?.slice(0, 10) });
+    }
+    const lists = await $fetch<{ items: { slug: string; updatedAt: string }[] }>(`${api}/api/lists/sitemap`);
+    for (const l of lists.items) {
+      urls.push({ loc: `${site}/lists/${encodeURIComponent(l.slug)}`, priority: '0.7', lastmod: l.updatedAt?.slice(0, 10) });
     }
   } catch {
     // ถ้า API ล่ม → ส่ง sitemap เฉพาะหน้า static (ไม่ให้ทั้ง sitemap พัง) และไม่ให้ cache นาน

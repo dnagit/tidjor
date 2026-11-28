@@ -1,0 +1,36 @@
+<script setup lang="ts">
+// ให้คะแนนในคลิกเดียว (ไม่ต้องเขียนรีวิว) — กดดาวแล้วบันทึกทันที
+const props = defineProps<{ movie: any; myRating?: number | null }>();
+const emit = defineEmits<{ (e: 'rated', rating: number): void; (e: 'write'): void }>();
+const auth = useAuthStore();
+const api = useApi();
+const route = useRoute();
+const rating = ref(props.myRating || 0);
+const saving = ref(false);
+const saved = ref(false);
+watch(() => props.myRating, (v) => { if (v) rating.value = v; });
+
+async function rate(n: number) {
+  if (!auth.isAuthenticated) return navigateTo(`/auth/login?next=${encodeURIComponent(route.fullPath)}`);
+  rating.value = n;
+  saving.value = true;
+  try {
+    await api.post('/api/reviews', { movieId: props.movie.id, rating: n });
+    saved.value = true;
+    track('rate', { ...mediaParams(props.movie), rating: n });
+    emit('rated', n);
+  } finally { saving.value = false; }
+}
+</script>
+
+<template>
+  <div class="card p-4 mb-6">
+    <p class="font-semibold mb-1">{{ rating ? 'คะแนนของคุณ' : `ดู${movie.mediaType === 'tv' ? 'ซีรีส์' : 'หนัง'}เรื่องนี้แล้ว? ให้คะแนนเลย` }}</p>
+    <StarRating :model-value="rating" size="lg" @update:model-value="rate" />
+    <p v-if="saved" class="text-sm text-green-700 mt-2">
+      ✓ บันทึก {{ rating }}/10 แล้ว ·
+      <button type="button" class="underline text-brand-600" @click="emit('write')">เขียนรีวิวเพิ่ม</button>
+    </p>
+    <p v-else class="text-xs text-gray-500 mt-1">กดดาวครั้งเดียว ไม่ต้องเขียนข้อความ{{ saving ? ' · กำลังบันทึก...' : '' }}</p>
+  </div>
+</template>

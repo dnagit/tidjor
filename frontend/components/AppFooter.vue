@@ -10,6 +10,7 @@ const { reset } = useConsent();
       <nav class="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-3">
         <NuxtLink to="/upcoming" class="hover:text-brand-600">เข้าฉายเร็ว ๆ นี้</NuxtLink>
         <NuxtLink to="/news" class="hover:text-brand-600">ข่าว</NuxtLink>
+        <NuxtLink to="/lists" class="hover:text-brand-600">แนะนำหนังและซีรีส์</NuxtLink>
         <NuxtLink to="/privacy" class="hover:text-brand-600">นโยบายความเป็นส่วนตัว</NuxtLink>
         <button type="button" class="hover:text-brand-600" @click="reset()">ตั้งค่าคุกกี้</button>
       </nav>

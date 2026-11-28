@@ -8,12 +8,16 @@ export async function recomputeMovieStats(movieId) {
     _avg: { rating: true },
     _count: { _all: true },
   });
+  // reviewCount = รีวิวที่มีข้อความ (คะแนนอย่างเดียวนับใน ratingCount)
+  const reviewCount = await prisma.review.count({
+    where: { movieId, isPublished: true, isHidden: false, content: { not: '' } },
+  });
   await prisma.movie.update({
     where: { id: movieId },
     data: {
       averageRating: agg._avg.rating || 0,
       ratingCount: agg._count._all,
-      reviewCount: agg._count._all,
+      reviewCount,
     },
   });
 }

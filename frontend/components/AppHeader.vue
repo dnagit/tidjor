@@ -49,6 +49,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
       <div class="hidden md:flex items-center gap-2">
         <template v-if="auth.isAuthenticated">
           <NuxtLink v-if="auth.isModerator" to="/admin" class="btn-outline text-sm">Admin</NuxtLink>
+          <NotificationBell />
           <NuxtLink to="/watchlist" class="btn-ghost text-sm">⭐ Watchlist</NuxtLink>
           <NuxtLink :to="`/u/${auth.user?.username}`" class="flex items-center gap-2">
             <img v-if="auth.user?.avatarUrl" :src="auth.user.avatarUrl" class="w-8 h-8 rounded-full" />
@@ -56,6 +57,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
               {{ auth.user?.displayName?.[0]?.toUpperCase() }}
             </div>
           </NuxtLink>
+          <NuxtLink to="/account" class="btn-ghost text-sm" title="ตั้งค่าบัญชี" aria-label="ตั้งค่าบัญชี">⚙️</NuxtLink>
           <button @click="auth.logout()" class="btn-ghost text-sm">ออก</button>
         </template>
         <template v-else>
@@ -64,9 +66,11 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
         </template>
       </div>
 
-      <!-- Mobile: hamburger -->
+      <!-- Mobile: แจ้งเตือน + hamburger -->
+      <NotificationBell v-if="auth.isAuthenticated" class="md:hidden ml-auto" />
       <button
-        class="md:hidden ml-auto -mr-2 p-2 text-gray-700 rounded-lg hover:bg-gray-100"
+        class="md:hidden -mr-2 p-2 text-gray-700 rounded-lg hover:bg-gray-100"
+        :class="!auth.isAuthenticated && 'ml-auto'"
         :aria-expanded="mobileOpen"
         aria-label="เมนู"
         @click="mobileOpen = !mobileOpen"
@@ -113,6 +117,9 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
             <NuxtLink to="/upcoming" class="py-3.5 border-b border-gray-100 text-gray-800 font-medium" @click="mobileOpen = false">
               🗓️ เข้าฉายเร็ว ๆ นี้
             </NuxtLink>
+            <NuxtLink to="/lists" class="py-3.5 border-b border-gray-100 text-gray-800 font-medium" @click="mobileOpen = false">
+              🏆 แนะนำหนังและซีรีส์
+            </NuxtLink>
             <NuxtLink to="/news" class="py-3.5 border-b border-gray-100 text-gray-800 font-medium" @click="mobileOpen = false">
               📰 ข่าวหนังและซีรีส์
             </NuxtLink>
@@ -133,6 +140,9 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
               </NuxtLink>
               <NuxtLink to="/watchlist" class="block py-3.5 border-t border-gray-100 text-gray-800" @click="mobileOpen = false">
                 ⭐ Watchlist
+              </NuxtLink>
+              <NuxtLink to="/account" class="block py-3.5 border-t border-gray-100 text-gray-800" @click="mobileOpen = false">
+                ⚙️ ตั้งค่าบัญชี
               </NuxtLink>
               <NuxtLink v-if="auth.isModerator" to="/admin" class="block py-3.5 border-t border-gray-100 text-gray-800" @click="mobileOpen = false">
                 ⚙️ ระบบหลังบ้าน (Admin)

@@ -122,7 +122,7 @@ export async function getBySlug(req, res, next) {
 
     // Top reviews
     const reviews = await prisma.review.findMany({
-      where: { movieId: movie.id, isPublished: true, isHidden: false },
+      where: { movieId: movie.id, isPublished: true, isHidden: false, content: { not: '' } },
       orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
       take: 10,
       include: {

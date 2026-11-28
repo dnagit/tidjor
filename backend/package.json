@@ -15,7 +15,9 @@
     "sync:tv": "node scripts/syncTmdb.js tv",
     "sync:all": "node scripts/syncTmdb.js all",
     "generate:reviews": "node scripts/generateReviews.js",
-    "generate:news": "node scripts/generateNews.js"
+    "generate:news": "node scripts/generateNews.js",
+    "generate:lists": "node scripts/generateLists.js",
+    "notify": "node scripts/runNotifications.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

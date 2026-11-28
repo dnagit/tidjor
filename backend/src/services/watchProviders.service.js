@@ -40,5 +40,13 @@ export async function ensureWatchProviders(movie) {
   return Promise.race([job, timeout]);
 }
 
+// อัปเดตทันที (ใช้ใน job แจ้งเตือน) — คืนรายชื่อแพลตฟอร์มสตรีมมิงก่อน/หลัง
+export async function refreshNow(movie) {
+  const names = (p) => [...(p?.stream || []), ...(p?.free || [])].map((x) => x.name);
+  const before = names(movie.watchProviders);
+  const after = names(await refresh(movie));
+  return { before, after, firstFetch: !movie.watchProvidersAt };
+}
+
 // มีแพลตฟอร์มให้ดูไหม (ใช้ตัดสินว่าจะโชว์กล่องหรือเปล่า)
 export const hasProviders = (p) => !!p && ['stream', 'free', 'rent', 'buy'].some((k) => p[k]?.length);

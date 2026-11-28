@@ -13,6 +13,7 @@ const [
   { data: thaiMovies },
   { data: feed },
   { data: news },
+  { data: lists },
 ] = await Promise.all([
   api({ sort: 'popularity', order: 'desc', limit: 12 }),
   api({ sort: 'averageRating', order: 'desc', limit: 12 }),
@@ -24,6 +25,7 @@ const [
   api({ type: 'movie', lang: 'th', sort: 'releaseDate', order: 'desc', limit: 12 }),
   api({ limit: 6 }, '/api/reviews/feed'),
   api({ limit: 3 }, '/api/news'),
+  api({}, '/api/lists'),
 ]);
 
 // โหลดรูป banner (LCP) ทันทีตั้งแต่อ่าน <head> ไม่ต้องรอ parse ถึง <img>
@@ -99,6 +101,17 @@ useSeoMeta({
       </div>
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <NewsCard v-for="n in news.items" :key="n.id" :news="n" />
+      </div>
+    </section>
+
+    <!-- ลิสต์แนะนำ -->
+    <section v-if="lists?.items?.length" class="max-w-7xl mx-auto px-4 py-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-bold">🏆 แนะนำหนังและซีรีส์</h2>
+        <NuxtLink to="/lists" class="text-brand-600 text-sm hover:underline">ดูทั้งหมด →</NuxtLink>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <NuxtLink v-for="l in lists.items.slice(0, 8)" :key="l.id" :to="`/lists/${l.slug}`" class="chip bg-white border border-gray-200 hover:border-brand-300 hover:text-brand-700 px-3 py-1.5 text-sm">{{ l.title }}</NuxtLink>
       </div>
     </section>
 

@@ -16,13 +16,13 @@ export async function listForMovie(req, res, next) {
 
     const [items, total] = await Promise.all([
       prisma.review.findMany({
-        where: { movieId, isPublished: true, isHidden: false },
+        where: { movieId, isPublished: true, isHidden: false, content: { not: '' } },
         orderBy, take, skip,
         include: {
           user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isBot: true } },
         },
       }),
-      prisma.review.count({ where: { movieId, isPublished: true, isHidden: false } }),
+      prisma.review.count({ where: { movieId, isPublished: true, isHidden: false, content: { not: '' } } }),
     ]);
 
     res.json({ items, total, page: Number(page), totalPages: Math.ceil(total / take) });
@@ -31,13 +31,21 @@ export async function listForMovie(req, res, next) {
 
 export async function create(req, res, next) {
   try {
-    const { movieId, rating, title, content, hasSpoiler } = req.body;
-    if (!rating || rating < 1 || rating > 10) return res.status(400).json({ error: 'invalid_rating' });
+    const { movieId, title, hasSpoiler } = req.body;
+    const rating = Number(req.body.rating);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 10) return res.status(400).json({ error: 'invalid_rating' });
+    if (!movieId) return res.status(400).json({ error: 'movie_required' });
+    // ให้คะแนนอย่างเดียว (ไม่เขียนข้อความ) ได้ — content = ''
+    // ให้คะแนนซ้ำโดยไม่ส่งข้อความมา → คงข้อความรีวิวเดิมไว้
+    const content = typeof req.body.content === 'string' ? req.body.content.trim() : undefined;
 
     const review = await prisma.review.upsert({
       where: { userId_movieId: { userId: req.user.id, movieId } },
-      create: { userId: req.user.id, movieId, rating, title, content, hasSpoiler },
-      update: { rating, title, content, hasSpoiler },
+      create: { userId: req.user.id, movieId, rating, title, content: content ?? '', hasSpoiler: !!hasSpoiler },
+      update: {
+        rating,
+        ...(content !== undefined && { content, title, hasSpoiler: !!hasSpoiler }),
+      },
       include: {
         user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isBot: true } },
       },
@@ -90,7 +98,7 @@ export async function feed(req, res, next) {
     const skip = (Number(page) - 1) * take;
 
     const items = await prisma.review.findMany({
-      where: { isPublished: true, isHidden: false },
+      where: { isPublished: true, isHidden: false, content: { not: '' } },
       orderBy: { createdAt: 'desc' },
       take, skip,
       include: {
@@ -99,5 +107,16 @@ export async function feed(req, res, next) {
       },
     });
     res.json({ items });
+  } catch (err) { next(err); }
+}
+
+// รีวิว/คะแนนของฉันสำหรับเรื่องนี้ (ใช้แสดงดาวที่เคยให้ไว้ และเติมฟอร์มรีวิว)
+export async function mine(req, res, next) {
+  try {
+    const review = await prisma.review.findUnique({
+      where: { userId_movieId: { userId: req.user.id, movieId: req.params.movieId } },
+      select: { id: true, rating: true, title: true, content: true, hasSpoiler: true },
+    });
+    res.json({ review });
   } catch (err) { next(err); }
 }

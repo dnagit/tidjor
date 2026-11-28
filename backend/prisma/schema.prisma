@@ -53,6 +53,8 @@ model User {
   refreshTokens RefreshToken[]
   adminLogs     AdminLog[]
   moviesAdded   Movie[]        @relation("MovieAddedBy")
+  notifications Notification[]
+  newsComments  NewsComment[]
 
   @@index([email])
   @@index([username])
@@ -292,10 +294,70 @@ model NewsArticle {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  movie Movie? @relation(fields: [movieId], references: [id], onDelete: SetNull)
+  movie    Movie?        @relation(fields: [movieId], references: [id], onDelete: SetNull)
+  comments NewsComment[]
 
   @@index([isPublished, publishedAt])
   @@index([movieId])
+}
+
+model NewsComment {
+  id        String   @id @default(cuid())
+  newsId    String
+  userId    String
+  content   String   @db.Text
+  isHidden  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  news NewsArticle @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([newsId, createdAt])
+  @@index([userId])
+}
+
+// ============================================
+// TOP LIST — บทความรวมเรื่อง เช่น "10 หนังผีไทยต้องดู"
+// ============================================
+
+model TopList {
+  id      String @id @default(cuid())
+  slug    String @unique
+  topic   String @unique // key ของหัวข้อ (สร้างใหม่ = อัปเดตบทความเดิม)
+  title   String
+  excerpt String
+  intro   String @db.Text
+  items   Json // [{ movieId, blurb }] ตามลำดับ
+  coverUrl String?
+  isAi    Boolean @default(false)
+
+  isPublished Boolean  @default(true)
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isPublished, publishedAt])
+}
+
+// ============================================
+// NOTIFICATION — แจ้งเตือนในเว็บ (เรื่องใน Watchlist เข้าฉาย / มาลงสตรีมมิง)
+// ============================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  key       String // กันแจ้งซ้ำ เช่น "release:<movieId>", "stream:<movieId>:Netflix"
+  title     String
+  body      String?
+  url       String?
+  imageUrl  String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@index([userId, isRead, createdAt])
 }
 
 // ============================================

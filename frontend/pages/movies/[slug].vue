@@ -104,6 +104,18 @@ useHead({
 const showForm = ref(false);
 const form = ref({ rating: 8, title: '', content: '', hasSpoiler: false });
 
+// คะแนน/รีวิวที่เคยให้ไว้ (โหลดฝั่ง browser หลังรู้ว่า login แล้ว)
+const myRating = ref<number | null>(null);
+async function loadMine() {
+  const r = await api.get<{ review: any }>(`/api/reviews/mine/${m.id}`).catch(() => null);
+  if (!r?.review) return;
+  myRating.value = r.review.rating;
+  form.value = { rating: r.review.rating, title: r.review.title || '', content: r.review.content || '', hasSpoiler: r.review.hasSpoiler };
+}
+onMounted(() => watch(() => auth.isAuthenticated, (ok) => ok && loadMine(), { immediate: true }));
+function onRated(n: number) { myRating.value = n; form.value.rating = n; }
+function openForm() { showForm.value = true; track('open_review_form', mediaParams(m)); }
+
 async function submitReview() {
   if (!auth.isAuthenticated) {
     return navigateTo(`/auth/login?next=${route.fullPath}`);
@@ -183,16 +195,19 @@ async function toggleWatchlist() {
             </div>
           </div>
 
+          <QuickRate :movie="m" :my-rating="myRating" @rated="onRated" @write="openForm" />
+
           <p v-if="m.tagline" class="italic text-gray-600 mb-3">"{{ m.tagline }}"</p>
           <p class="leading-relaxed text-gray-700 mb-6">{{ m.overview }}</p>
 
           <WatchProviders :providers="m.watchProviders" :title="m.titleTh || m.title" :is-tv="isTv" />
 
           <div class="flex gap-3">
-            <button class="btn-primary" @click="showForm = !showForm; if (showForm) track('open_review_form', mediaParams(m))">✍️ เขียนรีวิว</button>
+            <button class="btn-primary" @click="showForm ? (showForm = false) : openForm()">✍️ {{ form.content ? 'แก้ไขรีวิว' : 'เขียนรีวิว' }}</button>
             <button class="btn-outline" @click="toggleWatchlist">⭐ เพิ่มใน Watchlist</button>
             <a v-if="m.trailerUrl" :href="m.trailerUrl" target="_blank" rel="noopener" class="btn-ghost" @click="track('view_trailer', mediaParams(m))">▶️ ดูตัวอย่าง</a>
           </div>
+          <ShareButtons class="mt-4" :title="`${m.titleTh || m.title} - ติดจอ`" :path="canonicalPath" content-type="movie" :item-id="m.slug" />
         </div>
       </div>
 
