@@ -63,7 +63,7 @@ useSeoMeta({ title: 'Watchlist', robots: 'noindex' });
           <template v-else>
             <div v-if="asking === w.movie.id || !w.myRating" class="bg-brand-50 rounded-lg p-2">
               <p class="text-xs font-medium mb-1">ให้กี่ดาว?</p>
-              <StarRating :model-value="w.myRating || 0" size="sm" @update:model-value="(n: number) => rate(w, n)" />
+              <StarRating :model-value="w.myRating || 0" size="sm" fluid :show-value="false" @update:model-value="(n: number) => rate(w, n)" />
             </div>
             <p v-else class="text-gray-600">คะแนนของคุณ <b class="text-brand-700">★ {{ w.myRating }}</b>/10</p>
             <button class="text-xs text-gray-400 hover:text-gray-600 mt-1" @click="unwatch(w)">ย้ายกลับไปอยากดู</button>

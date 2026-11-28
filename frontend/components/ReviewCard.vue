@@ -17,33 +17,36 @@ const showSpoiler = ref(false);
 
 <template>
   <article class="card p-4">
-    <header class="flex items-center gap-3 mb-3">
-      <img v-if="review.user.avatarUrl" :src="review.user.avatarUrl" class="w-10 h-10 rounded-full" />
-      <div v-else class="w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold">
+    <header class="flex items-start gap-3 mb-3">
+      <img v-if="review.user.avatarUrl" :src="review.user.avatarUrl" alt="" class="w-10 h-10 rounded-full shrink-0 object-cover" />
+      <div v-else class="w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold shrink-0">
         {{ review.user.displayName?.[0]?.toUpperCase() }}
       </div>
-      <div class="flex-1">
-        <NuxtLink :to="`/u/${review.user.username}`" class="font-semibold hover:text-brand-600">
-          {{ review.user.displayName }}
-        </NuxtLink>
-        <AiBadge v-if="review.user.isBot" class="ml-2" />
+      <div class="flex-1 min-w-0">
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <NuxtLink :to="`/u/${review.user.username}`" class="font-semibold hover:text-brand-600 truncate">
+            {{ review.user.displayName }}
+          </NuxtLink>
+          <AiBadge v-if="review.user.isBot" />
+        </div>
         <p class="text-xs text-gray-500">
           {{ new Date(review.createdAt).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }) }}
         </p>
       </div>
-      <div class="flex flex-col items-end gap-0.5">
-        <span class="font-bold text-brand-700">★ {{ review.rating }}<span class="text-xs text-gray-500 font-normal">/10</span></span>
-        <StarRating :model-value="review.rating" readonly size="sm" />
+      <div class="flex flex-col items-end gap-0.5 shrink-0">
+        <span class="font-bold text-brand-700 whitespace-nowrap">★ {{ review.rating }}<span class="text-xs text-gray-500 font-normal">/10</span></span>
+        <!-- ดาว 10 ดวงแสดงเฉพาะจอกว้าง (มือถือแคบเกิน) -->
+        <StarRating :model-value="review.rating" readonly size="sm" class="hidden sm:inline-flex" />
       </div>
     </header>
 
-    <h4 v-if="review.title" class="font-bold mb-1">{{ review.title }}</h4>
+    <h4 v-if="review.title" class="font-bold mb-1 break-words">{{ review.title }}</h4>
 
     <div v-if="review.hasSpoiler && !showSpoiler" class="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm">
       ⚠️ รีวิวนี้มีเนื้อหาสปอยล์
       <button @click="showSpoiler = true" class="ml-2 underline text-brand-600">แสดงเนื้อหา</button>
     </div>
-    <p v-else class="text-gray-700 whitespace-pre-line leading-relaxed">{{ review.content }}</p>
+    <p v-else class="text-gray-700 whitespace-pre-line leading-relaxed break-words">{{ review.content }}</p>
 
     <p v-if="review.sources?.length" class="mt-3 text-xs text-gray-500">
       อ้างอิงจาก:

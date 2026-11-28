@@ -292,7 +292,7 @@ function scrollTo(id: string) { document.getElementById(id)?.scrollIntoView({ be
           <h2 class="text-xl font-bold mb-4">รีวิวของคุณ</h2>
           <div class="mb-4">
             <label class="block text-sm font-medium mb-2">ให้คะแนน</label>
-            <StarRating v-model="form.rating" size="lg" />
+            <StarRating v-model="form.rating" fluid />
           </div>
           <input v-model="form.title" type="text" placeholder="หัวข้อรีวิว (ไม่ใส่ก็ได้)" class="input mb-3" />
           <textarea v-model="form.content" rows="5" placeholder="เขียนความคิดเห็นของคุณ..." class="input mb-3"></textarea>

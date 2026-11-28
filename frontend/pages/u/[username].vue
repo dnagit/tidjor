@@ -41,11 +41,11 @@ useSeoMeta({
         <NuxtLink :to="mediaPath(r.movie)" class="shrink-0">
           <img v-if="r.movie.posterUrl" :src="tmdbImg(r.movie.posterUrl, 'w185')" width="80" height="112" loading="lazy" alt="" class="w-20 h-28 object-cover rounded" />
         </NuxtLink>
-        <div class="flex-1">
-          <NuxtLink :to="mediaPath(r.movie)" class="font-semibold hover:text-brand-600">
+        <div class="flex-1 min-w-0">
+          <NuxtLink :to="mediaPath(r.movie)" class="font-semibold hover:text-brand-600 block truncate">
             {{ r.movie.titleTh || r.movie.title }}
           </NuxtLink>
-          <StarRating :model-value="r.rating" readonly size="sm" />
+          <span class="inline-flex items-center gap-0.5 rounded-md bg-brand-50 px-1.5 py-0.5 text-xs font-bold text-brand-700 whitespace-nowrap">★ {{ r.rating }}<span class="font-normal text-gray-500">/10</span></span>
           <p class="text-sm text-gray-700 mt-1 line-clamp-3">{{ r.content }}</p>
         </div>
       </div>

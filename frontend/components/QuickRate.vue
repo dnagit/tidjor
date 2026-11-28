@@ -25,8 +25,11 @@ async function rate(n: number) {
 
 <template>
   <div class="card p-4 mb-6">
-    <p class="font-semibold mb-1">{{ rating ? 'คะแนนของคุณ' : `ดู${movie.mediaType === 'tv' ? 'ซีรีส์' : 'หนัง'}เรื่องนี้แล้ว? ให้คะแนนเลย` }}</p>
-    <StarRating :model-value="rating" size="lg" @update:model-value="rate" />
+    <div class="flex items-baseline justify-between gap-2 mb-1">
+      <p class="font-semibold">{{ rating ? 'คะแนนของคุณ' : `ดู${movie.mediaType === 'tv' ? 'ซีรีส์' : 'หนัง'}เรื่องนี้แล้ว? ให้คะแนนเลย` }}</p>
+      <span v-if="rating" class="text-brand-700 font-bold tabular-nums shrink-0">{{ rating }}/10</span>
+    </div>
+    <StarRating :model-value="rating" fluid :show-value="false" @update:model-value="rate" />
     <p v-if="saved" class="text-sm text-green-700 mt-2">
       ✓ บันทึก {{ rating }}/10 แล้ว ·
       <button type="button" class="underline text-brand-600" @click="emit('write')">เขียนรีวิวเพิ่ม</button>

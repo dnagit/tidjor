@@ -23,8 +23,8 @@ useSeoMeta({
             <NuxtLink :to="mediaPath(r.movie)" class="font-bold hover:text-brand-600">
               {{ r.movie.title }}
             </NuxtLink>
-            <div class="flex items-center gap-2 text-sm mt-1">
-              <StarRating :model-value="r.rating" readonly size="sm" />
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm mt-1">
+              <span class="inline-flex items-center gap-0.5 rounded-md bg-brand-50 px-1.5 py-0.5 text-xs font-bold text-brand-700 whitespace-nowrap">★ {{ r.rating }}<span class="font-normal text-gray-500">/10</span></span>
               <span class="text-gray-500">โดย {{ r.user.displayName }} · {{ new Date(r.createdAt).toLocaleDateString('th-TH') }}</span>
               <AiBadge v-if="r.user.isBot" />
             </div>
