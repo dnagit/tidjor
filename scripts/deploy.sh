@@ -58,7 +58,7 @@ deploy_backend() {
   [ -f .env ] || die "ไม่พบ backend/.env"
 
   # env ที่ฟีเจอร์ใหม่ต้องใช้ — แค่เตือน ไม่หยุด deploy
-  for key in DATABASE_URL TMDB_API_KEY ANTHROPIC_API_KEY OMDB_API_KEY TMDB_SYNC_CRON AI_REVIEW_CRON; do
+  for key in DATABASE_URL TMDB_API_KEY ANTHROPIC_API_KEY OMDB_API_KEY TMDB_SYNC_CRON AI_REVIEW_CRON AI_NEWS_CRON; do
     grep -q "^${key}=." .env || warn "backend/.env ยังไม่มี ${key}"
   done
 

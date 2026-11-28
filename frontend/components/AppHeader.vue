@@ -36,6 +36,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
         <NuxtLink to="/series" class="btn-ghost text-sm">ซีรีส์</NuxtLink>
         <NuxtLink to="/movies?sort=popularity" class="btn-ghost text-sm">ยอดนิยม</NuxtLink>
         <NuxtLink to="/reviews" class="btn-ghost text-sm">รีวิวล่าสุด</NuxtLink>
+        <NuxtLink to="/news" class="btn-ghost text-sm">ข่าว</NuxtLink>
       </nav>
 
       <!-- Desktop search -->
@@ -107,6 +108,9 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
             </NuxtLink>
             <NuxtLink to="/reviews" class="py-3.5 border-b border-gray-100 text-gray-800 font-medium" @click="mobileOpen = false">
               ✍️ รีวิวล่าสุด
+            </NuxtLink>
+            <NuxtLink to="/news" class="py-3.5 border-b border-gray-100 text-gray-800 font-medium" @click="mobileOpen = false">
+              📰 ข่าวหนังและซีรีส์
             </NuxtLink>
           </nav>
 

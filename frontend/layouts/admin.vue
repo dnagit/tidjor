@@ -8,6 +8,7 @@
       <AdminNavLink to="/admin" icon="📊">Dashboard</AdminNavLink>
       <AdminNavLink to="/admin/movies" icon="🎞️">หนัง</AdminNavLink>
       <AdminNavLink to="/admin/reviews" icon="✍️">รีวิว</AdminNavLink>
+      <AdminNavLink to="/admin/news" icon="📰">ข่าว</AdminNavLink>
       <AdminNavLink to="/admin/users" icon="👥">ผู้ใช้</AdminNavLink>
       <AdminNavLink to="/admin/genres" icon="🏷️">หมวดหมู่</AdminNavLink>
       <div class="mt-auto pt-4 border-t">

@@ -12,6 +12,7 @@ const [
   { data: newSeries },
   { data: thaiMovies },
   { data: feed },
+  { data: news },
 ] = await Promise.all([
   api({ sort: 'popularity', order: 'desc', limit: 12 }),
   api({ sort: 'averageRating', order: 'desc', limit: 12 }),
@@ -22,6 +23,7 @@ const [
   // หนังไทย — เรียงตามวันฉายล่าสุด
   api({ type: 'movie', lang: 'th', sort: 'releaseDate', order: 'desc', limit: 12 }),
   api({ limit: 6 }, '/api/reviews/feed'),
+  api({ limit: 3 }, '/api/news'),
 ]);
 
 // โหลดรูป banner (LCP) ทันทีตั้งแต่อ่าน <head> ไม่ต้องรอ parse ถึง <img>
@@ -86,6 +88,17 @@ useSeoMeta({
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <MovieCard v-for="m in newSeries.items" :key="m.id" :movie="m" />
+      </div>
+    </section>
+
+    <!-- ข่าวล่าสุด -->
+    <section v-if="news?.items?.length" class="max-w-7xl mx-auto px-4 py-12">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">📰 ข่าวหนังและซีรีส์</h2>
+        <NuxtLink to="/news" class="text-brand-600 text-sm hover:underline">ดูทั้งหมด →</NuxtLink>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <NewsCard v-for="n in news.items" :key="n.id" :news="n" />
       </div>
     </section>
 

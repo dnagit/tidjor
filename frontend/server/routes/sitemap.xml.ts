@@ -1,4 +1,4 @@
-// /sitemap.xml — หน้าหลัก + หน้าหนัง (/movies) และซีรีส์ (/series) ทุกเรื่อง (ดึง slug ทั้งหมดจาก /api/movies/sitemap ครั้งเดียว)
+// /sitemap.xml — หน้าหลัก + ข่าว + หน้าหนัง (/movies) และซีรีส์ (/series) ทุกเรื่อง (ดึง slug ทั้งหมดจาก /api/movies/sitemap ครั้งเดียว)
 interface SitemapItem { slug: string; mediaType: 'movie' | 'tv'; updatedAt: string }
 
 export default defineEventHandler(async (event) => {
@@ -15,6 +15,7 @@ export default defineEventHandler(async (event) => {
     { loc: `${site}/movies?type=movie`, priority: '0.8' },
     { loc: `${site}/series`, priority: '0.8' },
     { loc: `${site}/reviews`, priority: '0.6' },
+    { loc: `${site}/news`, priority: '0.7' },
   ];
 
   try {
@@ -25,6 +26,10 @@ export default defineEventHandler(async (event) => {
         priority: '0.7',
         lastmod: m.updatedAt?.slice(0, 10),
       });
+    }
+    const news = await $fetch<{ items: { slug: string; updatedAt: string }[] }>(`${api}/api/news/sitemap`);
+    for (const n of news.items) {
+      urls.push({ loc: `${site}/news/${encodeURIComponent(n.slug)}`, priority: '0.6', lastmod: n.updatedAt?.slice(0, 10) });
     }
   } catch {
     // ถ้า API ล่ม → ส่ง sitemap เฉพาะหน้า static (ไม่ให้ทั้ง sitemap พัง) และไม่ให้ cache นาน

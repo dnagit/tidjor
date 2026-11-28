@@ -26,6 +26,11 @@ if (route.path !== canonicalPath) {
 }
 const isTv = m.mediaType === 'tv';
 
+const { data: news } = await useFetch<{ items: any[] }>('/api/news', {
+  baseURL: config.public.apiBase,
+  query: { movieId: m.id, limit: 3 },
+});
+
 // ===== SEO =====
 const siteUrl = config.public.siteUrl;
 useSeoMeta({
@@ -197,6 +202,14 @@ async function toggleWatchlist() {
         <div class="flex gap-2">
           <button @click="submitReview" class="btn-primary">ส่งรีวิว</button>
           <button @click="showForm = false" class="btn-outline">ยกเลิก</button>
+        </div>
+      </section>
+
+      <!-- ข่าวของเรื่องนี้ -->
+      <section v-if="news?.items?.length" class="mt-10">
+        <h2 class="text-2xl font-bold mb-4">ข่าว{{ isTv ? 'ซีรีส์' : 'หนัง' }}เรื่องนี้</h2>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <NewsCard v-for="n in news.items" :key="n.id" :news="n" compact />
         </div>
       </section>
 

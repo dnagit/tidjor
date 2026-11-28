@@ -166,6 +166,7 @@ model Movie {
   genres    MovieGenre[]
   reviews   Review[]
   watchlist Watchlist[]
+  news      NewsArticle[]
 
   @@unique([tmdbId, mediaType])
   @@index([slug])
@@ -265,6 +266,32 @@ model ReviewLike {
 
   @@unique([reviewId, userId])
   @@index([userId])
+}
+
+// ============================================
+// NEWS — ข่าวหนัง/ซีรีส์ที่กำลังจะเข้าฉาย/ออน
+// ============================================
+
+model NewsArticle {
+  id      String  @id @default(cuid())
+  slug    String  @unique
+  title   String
+  excerpt String // สรุปสั้น (ใช้เป็น meta description)
+  content String  @db.Text // ย่อหน้าคั่นด้วยบรรทัดว่าง, หัวข้อย่อยขึ้นต้นด้วย "## "
+  coverUrl String?
+  movieId String? // หนัง/ซีรีส์ที่ข่าวพูดถึง
+  sources Json? // แหล่งอ้างอิง: [{ name, url }]
+  isAi    Boolean @default(false) // AI เรียบเรียง → หน้าเว็บต้องแสดงป้ายบอก
+
+  isPublished Boolean  @default(true)
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  movie Movie? @relation(fields: [movieId], references: [id], onDelete: SetNull)
+
+  @@index([isPublished, publishedAt])
+  @@index([movieId])
 }
 
 // ============================================
