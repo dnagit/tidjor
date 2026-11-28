@@ -1,5 +1,6 @@
 import prisma from '../config/prisma.js';
 import { writeJson } from './claude.js';
+import { discover, syncOne } from './tmdbSync.service.js';
 
 // ============================================================
 // บทความรวมเรื่อง (Top list) เช่น "10 หนังผีไทยน่าดู"
@@ -12,42 +13,52 @@ const MODEL = process.env.AI_LIST_MODEL || 'claude-haiku-5-5';
 const SIZE = 10;
 const MIN_ITEMS = 5;
 
-const genre = (slug) => ({ genres: { some: { genre: { slug } } } });
-const anyGenre = (...slugs) => ({ genres: { some: { genre: { slug: { in: slugs } } } } });
-
-// slug ภาษาอังกฤษคงที่ (URL ไม่เปลี่ยนเมื่ออัปเดต)
+// เลือกเรื่องจาก TMDB Discover: กำลังเป็นที่นิยม + คะแนนดี + มีคนโหวตพอ (ตัดเรื่องไม่มีใครรู้จัก)
+// เรื่องที่ยังไม่มีใน DB จะถูกดึงเข้ามาอัตโนมัติ (syncOne)
+// with_genres ใช้ id ของ TMDB, "|" = หรือ — slug ภาษาอังกฤษคงที่ (URL ไม่เปลี่ยนเมื่ออัปเดต)
+const d = (type, params, minScore = 7) => ({ type, params: { 'vote_average.gte': minScore, ...params } });
 export const TOPICS = [
-  { key: 'thai-horror', slug: 'best-thai-horror-movies', label: 'หนังผีไทย', where: { mediaType: 'movie', originalLanguage: 'th', ...genre('horror') } },
-  { key: 'horror', slug: 'best-horror-movies', label: 'หนังสยองขวัญ', where: { mediaType: 'movie', ...genre('horror') } },
-  { key: 'thai-movies', slug: 'best-thai-movies', label: 'หนังไทย', where: { mediaType: 'movie', originalLanguage: 'th' } },
-  { key: 'korean-series', slug: 'best-korean-series', label: 'ซีรีส์เกาหลี', where: { mediaType: 'tv', originalLanguage: 'ko' } },
-  { key: 'thai-series', slug: 'best-thai-series', label: 'ซีรีส์ไทย', where: { mediaType: 'tv', originalLanguage: 'th' } },
-  { key: 'chinese-series', slug: 'best-chinese-series', label: 'ซีรีส์จีน', where: { mediaType: 'tv', originalLanguage: { in: ['zh', 'cn'] } } },
-  { key: 'japanese-anime', slug: 'best-anime-movies', label: 'อนิเมะญี่ปุ่น (ภาพยนตร์)', where: { mediaType: 'movie', originalLanguage: 'ja', ...genre('animation') } },
-  { key: 'anime-series', slug: 'best-anime-series', label: 'อนิเมะซีรีส์', where: { mediaType: 'tv', originalLanguage: 'ja', ...genre('animation') } },
-  { key: 'korean-movies', slug: 'best-korean-movies', label: 'หนังเกาหลี', where: { mediaType: 'movie', originalLanguage: 'ko' } },
-  { key: 'action', slug: 'best-action-movies', label: 'หนังแอ็กชัน', where: { mediaType: 'movie', ...genre('action') } },
-  { key: 'comedy', slug: 'best-comedy-movies', label: 'หนังตลก', where: { mediaType: 'movie', ...genre('comedy') } },
-  { key: 'romance', slug: 'best-romance-movies', label: 'หนังรักโรแมนติก', where: { mediaType: 'movie', ...genre('romance') } },
-  { key: 'family', slug: 'best-family-animation-movies', label: 'หนังการ์ตูนดูกับครอบครัว', where: { mediaType: 'movie', ...anyGenre('animation', 'family') } },
-  { key: 'sci-fi', slug: 'best-sci-fi-movies', label: 'หนังไซไฟ', where: { mediaType: 'movie', ...genre('sci-fi') } },
-  { key: 'thriller', slug: 'best-thriller-mystery-movies', label: 'หนังระทึกขวัญ สืบสวน', where: { mediaType: 'movie', ...anyGenre('thriller', 'mystery') } },
-  { key: 'crime-series', slug: 'best-crime-series', label: 'ซีรีส์อาชญากรรม สืบสวน', where: { mediaType: 'tv', ...anyGenre('crime', 'mystery') } },
+  { key: 'thai-horror', slug: 'best-thai-horror-movies', label: 'หนังผีไทย', ...d('movie', { with_genres: '27', with_original_language: 'th', 'vote_count.gte': 15 }, 6) },
+  { key: 'horror', slug: 'best-horror-movies', label: 'หนังสยองขวัญ', ...d('movie', { with_genres: '27', 'vote_count.gte': 1500 }, 6.5) },
+  { key: 'thai-movies', slug: 'best-thai-movies', label: 'หนังไทย', ...d('movie', { with_original_language: 'th', 'vote_count.gte': 40 }, 6.5) },
+  { key: 'korean-series', slug: 'best-korean-series', label: 'ซีรีส์เกาหลี', ...d('tv', { with_original_language: 'ko', 'vote_count.gte': 150 }) },
+  { key: 'thai-series', slug: 'best-thai-series', label: 'ซีรีส์ไทย', ...d('tv', { with_original_language: 'th', 'vote_count.gte': 10 }, 6.5) },
+  { key: 'chinese-series', slug: 'best-chinese-series', label: 'ซีรีส์จีน', ...d('tv', { with_original_language: 'zh', 'vote_count.gte': 40 }) },
+  { key: 'japanese-anime', slug: 'best-anime-movies', label: 'อนิเมะญี่ปุ่น (ภาพยนตร์)', ...d('movie', { with_genres: '16', with_original_language: 'ja', 'vote_count.gte': 500 }) },
+  { key: 'anime-series', slug: 'best-anime-series', label: 'อนิเมะซีรีส์', ...d('tv', { with_genres: '16', with_original_language: 'ja', 'vote_count.gte': 500 }) },
+  { key: 'korean-movies', slug: 'best-korean-movies', label: 'หนังเกาหลี', ...d('movie', { with_original_language: 'ko', 'vote_count.gte': 300 }) },
+  { key: 'action', slug: 'best-action-movies', label: 'หนังแอ็กชัน', ...d('movie', { with_genres: '28', 'vote_count.gte': 3000 }) },
+  { key: 'comedy', slug: 'best-comedy-movies', label: 'หนังตลก', ...d('movie', { with_genres: '35', 'vote_count.gte': 2000 }) },
+  { key: 'romance', slug: 'best-romance-movies', label: 'หนังรักโรแมนติก', ...d('movie', { with_genres: '10749', 'vote_count.gte': 1500 }) },
+  { key: 'family', slug: 'best-family-animation-movies', label: 'หนังการ์ตูนดูกับครอบครัว', ...d('movie', { with_genres: '16', 'vote_count.gte': 2000 }) },
+  { key: 'sci-fi', slug: 'best-sci-fi-movies', label: 'หนังไซไฟ', ...d('movie', { with_genres: '878', 'vote_count.gte': 3000 }) },
+  { key: 'thriller', slug: 'best-thriller-mystery-movies', label: 'หนังระทึกขวัญ สืบสวน', ...d('movie', { with_genres: '53|9648', 'vote_count.gte': 3000 }) },
+  { key: 'crime-series', slug: 'best-crime-series', label: 'ซีรีส์อาชญากรรม สืบสวน', ...d('tv', { with_genres: '80|9648', 'vote_count.gte': 300 }) },
 ];
 
-function pickMovies(topic) {
-  return prisma.movie.findMany({
-    where: {
-      ...topic.where,
-      isPublished: true,
-      posterUrl: { not: null },
-      releaseDate: { lte: new Date() },
-      OR: [{ overviewTh: { not: null } }, { overview: { not: null } }],
-    },
-    orderBy: { popularity: 'desc' },
-    take: SIZE,
-    include: { genres: { include: { genre: true } } },
+async function pickMovies(topic) {
+  const today = new Date().toISOString().slice(0, 10);
+  const results = await discover(topic.type, {
+    sort_by: 'popularity.desc',
+    // เฉพาะเรื่องที่ฉาย/ออกอากาศแล้ว — ซีรีส์ตัดรายการวาไรตี้ ทอล์กโชว์ ข่าว
+    ...(topic.type === 'tv'
+      ? { 'first_air_date.lte': today, without_genres: '10763|10764|10767' }
+      : { 'primary_release_date.lte': today }),
+    ...topic.params,
   });
+  const picked = [];
+  for (const r of results) {
+    if (picked.length >= SIZE) break;
+    try {
+      const m = await syncOne(r.id, topic.type); // มีแล้วคืนเลย ไม่มีก็ดึงเข้ามา
+      if (m?.isPublished && m.posterUrl && (m.overviewTh || m.overview)) picked.push(m.id);
+    } catch (err) {
+      console.warn(`[ai-list] ดึง ${topic.type}/${r.id} ไม่ได้: ${err.message}`);
+    }
+  }
+  const rows = await prisma.movie.findMany({ where: { id: { in: picked } }, include: { genres: { include: { genre: true } } } });
+  const byId = new Map(rows.map((m) => [m.id, m]));
+  return picked.map((id) => byId.get(id)).filter(Boolean);
 }
 
 const LIST_SCHEMA = {

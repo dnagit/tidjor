@@ -160,6 +160,12 @@ async function upsertMovie(details, mediaType = 'movie') {
   });
 }
 
+// ค้นจาก TMDB Discover (ใช้เลือกเรื่องให้บทความรวมเรื่อง) — คืน results หน้าแรก
+export async function discover(mediaType, params = {}) {
+  const data = await tmdbGet(`/discover/${mediaType}`, { include_adult: false, ...params });
+  return data.results || [];
+}
+
 // list: 'popular' | 'now_playing' (กำลังฉาย) | 'upcoming' | 'top_rated'
 // ดึงเรื่องเดียวตาม tmdbId (ถ้ายังไม่มีใน DB) แล้วคืนค่า Movie
 export async function syncOne(tmdbId, mediaType = 'movie') {
