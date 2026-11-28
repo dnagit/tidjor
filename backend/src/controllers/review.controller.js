@@ -118,10 +118,12 @@ export async function feed(req, res, next) {
 // รีวิว/คะแนนของฉันสำหรับเรื่องนี้ (ใช้แสดงดาวที่เคยให้ไว้ และเติมฟอร์มรีวิว)
 export async function mine(req, res, next) {
   try {
-    const review = await prisma.review.findUnique({
-      where: { userId_movieId: { userId: req.user.id, movieId: req.params.movieId } },
-      select: { id: true, rating: true, title: true, content: true, hasSpoiler: true },
-    });
-    res.json({ review });
+    const where = { userId_movieId: { userId: req.user.id, movieId: req.params.movieId } };
+    const [review, watch] = await Promise.all([
+      prisma.review.findUnique({ where, select: { id: true, rating: true, title: true, content: true, hasSpoiler: true } }),
+      prisma.watchlist.findUnique({ where, select: { status: true } }),
+    ]);
+    // inWatchlist — ใช้แสดงปุ่ม Watchlist ว่าเพิ่มแล้วหรือยัง
+    res.json({ review, inWatchlist: !!watch, watchStatus: watch?.status || null });
   } catch (err) { next(err); }
 }

@@ -55,10 +55,10 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
       </div>
 
       <!-- Mobile: ค้นหา + แจ้งเตือน + hamburger -->
-      <button type="button" class="md:hidden ml-auto p-2 text-xl rounded-lg hover:bg-gray-100" aria-label="ค้นหา" @click="mobileOpen = true">🔍</button>
-      <NotificationBell v-if="auth.isAuthenticated" class="md:hidden" />
+      <NotificationBell v-if="auth.isAuthenticated" class="md:hidden ml-auto" />
       <button
         class="md:hidden -mr-2 p-2 text-gray-700 rounded-lg hover:bg-gray-100"
+        :class="!auth.isAuthenticated && 'ml-auto'"
         :aria-expanded="mobileOpen"
         aria-label="เมนู"
         @click="mobileOpen = !mobileOpen"

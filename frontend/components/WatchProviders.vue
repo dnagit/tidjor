@@ -11,7 +11,7 @@ const groups = computed(() => [
 
 <template>
   <section v-if="groups.length" class="card p-4 mb-6">
-    <h2 class="font-bold mb-3">📺 {{ title }} ดูได้ที่ไหน</h2>
+    <h2 class="font-bold mb-3 flex items-center gap-2"><Icon name="tv" class="w-5 h-5 text-brand-600" /> {{ title }} ดูได้ที่ไหน</h2>
     <div class="space-y-3">
       <div v-for="g in groups" :key="g.key" class="flex flex-wrap items-center gap-2">
         <span class="text-sm text-gray-500 w-32 shrink-0">{{ g.label }}</span>

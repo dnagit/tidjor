@@ -6,7 +6,7 @@ const { consent, ready, set } = useConsent();
   <div
     v-if="ready && consent === null"
     role="dialog" aria-label="การใช้คุกกี้"
-    class="fixed bottom-0 inset-x-0 z-50 bg-white border-t border-gray-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
+    class="fixed bottom-16 md:bottom-0 inset-x-0 z-50 bg-white border-t border-gray-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
   >
     <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center gap-3">
       <p class="text-sm text-gray-700 flex-1">
