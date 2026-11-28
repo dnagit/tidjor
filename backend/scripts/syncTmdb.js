@@ -1,6 +1,7 @@
 import './loadEnv.js';
 import prisma from '../src/config/prisma.js';
 import { syncMovies, syncTvSeries, syncAllMedia, syncTvDiscover } from '../src/services/tmdbSync.service.js';
+import { refreshChanged, refreshStale } from '../src/services/tmdbRefresh.service.js';
 
 // ============================================================
 // CLI runner
@@ -11,6 +12,8 @@ import { syncMovies, syncTvSeries, syncAllMedia, syncTvDiscover } from '../src/s
 //   node scripts/syncTmdb.js movies 5     # ดึงเฉพาะหนัง 5 หน้าแรก
 //   node scripts/syncTmdb.js tv 10        # ดึงเฉพาะซีรีย์ 10 หน้าแรก
 //   node scripts/syncTmdb.js tv-discover 25   # ซีรีส์ไทย/เกาหลี/จีน/ญี่ปุ่น/ฝรั่ง/ดูได้ในไทย ชุดละ 25 หน้า
+//   node scripts/syncTmdb.js refresh 3         # อัปเดตเรื่องที่ TMDB แจ้งว่าเปลี่ยนใน 3 วัน (cron ทำทุกวัน)
+//   node scripts/syncTmdb.js refresh-stale     # อัปเดตซีรีส์ทั้งหมด + หนังใกล้/เพิ่งฉาย (ครั้งแรกครั้งเดียว)
 //
 // env เสริม:
 //   TMDB_RATE_DELAY_MS=250    # หน่วงระหว่าง request (กัน rate limit)
@@ -31,11 +34,17 @@ async function main() {
     case 'tv-discover':
       await syncTvDiscover({ maxPages: Number.isFinite(maxPages) ? maxPages : 5 });
       break;
+    case 'refresh':
+      await refreshChanged({ days: Number(pagesArg) || 2 });
+      break;
+    case 'refresh-stale':
+      await refreshStale({ limit: Number(pagesArg) || 5000 });
+      break;
     case 'all':
       await syncAllMedia(opts);
       break;
     default:
-      console.error(`คำสั่งไม่ถูกต้อง: "${cmd}" — ใช้ได้: movies | tv | tv-discover | all`);
+      console.error(`คำสั่งไม่ถูกต้อง: "${cmd}" — ใช้ได้: movies | tv | tv-discover | refresh | refresh-stale | all`);
       process.exitCode = 1;
   }
 }

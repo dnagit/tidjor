@@ -5,6 +5,7 @@ import { startTmdbSyncJob } from './jobs/tmdbSync.job.js';
 import { startAiNewsJob } from './jobs/aiNews.job.js';
 import { startNotificationJob } from './jobs/notification.job.js';
 import { startAiListJob } from './jobs/aiList.job.js';
+import { startTmdbRefreshJob } from './jobs/tmdbRefresh.job.js';
 
 const PORT = process.env.PORT || 4000;
 
@@ -15,4 +16,5 @@ app.listen(PORT, () => {
   startAiNewsJob();
   startNotificationJob();
   startAiListJob();
+  startTmdbRefreshJob();
 });

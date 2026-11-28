@@ -12,9 +12,14 @@ const DAY = 24 * 60 * 60 * 1000;
 const pathOf = (m) => `${m.mediaType === 'tv' ? '/series' : '/movies'}/${m.slug}`;
 const MAX_PROVIDER_CHECKS = Number(process.env.NOTIFY_PROVIDER_CHECKS || 300);
 
-async function notifyWatchers(movie, key, title, body) {
+// includeWatched: แจ้งคนที่ดูแล้วด้วย (เช่น ซีซั่นใหม่ — คนที่ดูจบซีซั่นก่อนอยากรู้ที่สุด)
+export async function notifyWatchers(movie, key, title, body, { includeWatched = false } = {}) {
   const watchers = await prisma.watchlist.findMany({
-    where: { movieId: movie.id, status: { not: 'WATCHED' }, user: { isBot: false, isBanned: false } },
+    where: {
+      movieId: movie.id,
+      ...(!includeWatched && { status: { not: 'WATCHED' } }),
+      user: { isBot: false, isBanned: false },
+    },
     select: { userId: true },
   });
   if (!watchers.length) return 0;

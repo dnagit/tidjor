@@ -52,7 +52,7 @@ function sanitizeMovieStatus(s) {
 }
 
 // ---------- TMDB request พร้อม retry + rate limit ----------
-async function tmdbGet(path, params = {}, attempt = 1) {
+export async function tmdbGet(path, params = {}, attempt = 1) {
   if (!API_KEY && !ACCESS_TOKEN) {
     throw new Error('ไม่พบ TMDB_API_KEY หรือ TMDB_ACCESS_TOKEN ใน .env');
   }
