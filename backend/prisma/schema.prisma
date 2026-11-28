@@ -153,6 +153,10 @@ model Movie {
   watchProviders   Json? // { link, stream: [{ name, logo }], rent, buy, free }
   watchProvidersAt DateTime?
 
+  // ชื่อเรียกอื่นสำหรับค้นหา: ชื่อไทย/อังกฤษทางการจาก TMDB + คำอ่านภาษาไทยของชื่ออังกฤษ (AI) เช่น "อินเซปชั่น"
+  searchAliases String[]  @default([])
+  aliasesAt     DateTime?
+
   // Stats (denormalized for performance)
   averageRating  Float @default(0)
   ratingCount    Int   @default(0)

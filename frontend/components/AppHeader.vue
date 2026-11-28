@@ -1,17 +1,7 @@
 <script setup lang="ts">
 const auth = useAuthStore();
-const search = ref('');
-const router = useRouter();
 const route = useRoute();
 const mobileOpen = ref(false);
-
-function submitSearch() {
-  if (search.value.trim()) {
-    track('search', { search_term: search.value.trim(), search_from: 'header' });
-    router.push({ path: '/movies', query: { q: search.value.trim() } });
-    mobileOpen.value = false;
-  }
-}
 
 async function doLogout() {
   mobileOpen.value = false;
@@ -41,9 +31,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
       </nav>
 
       <!-- Desktop search -->
-      <form @submit.prevent="submitSearch" class="hidden md:block flex-1 max-w-md ml-auto">
-        <input v-model="search" type="search" placeholder="ค้นหาหนัง..." class="input" />
-      </form>
+      <SearchBox class="hidden md:block flex-1 max-w-md ml-auto" />
 
       <!-- Desktop auth -->
       <div class="hidden md:flex items-center gap-2">
@@ -66,11 +54,11 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
         </template>
       </div>
 
-      <!-- Mobile: แจ้งเตือน + hamburger -->
-      <NotificationBell v-if="auth.isAuthenticated" class="md:hidden ml-auto" />
+      <!-- Mobile: ค้นหา + แจ้งเตือน + hamburger -->
+      <button type="button" class="md:hidden ml-auto p-2 text-xl rounded-lg hover:bg-gray-100" aria-label="ค้นหา" @click="mobileOpen = true">🔍</button>
+      <NotificationBell v-if="auth.isAuthenticated" class="md:hidden" />
       <button
         class="md:hidden -mr-2 p-2 text-gray-700 rounded-lg hover:bg-gray-100"
-        :class="!auth.isAuthenticated && 'ml-auto'"
         :aria-expanded="mobileOpen"
         aria-label="เมนู"
         @click="mobileOpen = !mobileOpen"
@@ -96,9 +84,7 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
       <div v-if="mobileOpen" class="md:hidden border-t border-gray-200 bg-white shadow-lg">
         <div class="px-4 py-4 space-y-4">
           <!-- Search -->
-          <form @submit.prevent="submitSearch">
-            <input v-model="search" type="search" placeholder="ค้นหาหนัง..." class="input w-full" />
-          </form>
+          <SearchBox @done="mobileOpen = false" />
 
           <!-- Nav links (ปุ่มใหญ่ กดง่าย) -->
           <nav class="flex flex-col">

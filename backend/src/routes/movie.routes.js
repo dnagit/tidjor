@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import {
-  list, sitemap, getBySlug, create, update, remove,
+  list, sitemap, suggest, getBySlug, create, update, remove,
   searchTmdb, importFromTmdb,
   uploadPoster, removePoster, uploadImage,
 } from '../controllers/movie.controller.js';
@@ -12,6 +12,7 @@ const r = Router();
 // Public
 r.get('/', list);
 r.get('/sitemap', sitemap);
+r.get('/suggest', suggest);
 r.get('/slug/:slug', getBySlug);
 
 // Admin / Moderator

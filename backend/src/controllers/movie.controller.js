@@ -3,6 +3,7 @@ import slugify from 'slugify';
 import * as tmdb from '../services/tmdb.service.js';
 import { fillCastIds } from '../services/people.service.js';
 import { ensureWatchProviders, hasProviders } from '../services/watchProviders.service.js';
+import { searchMovies } from '../services/search.service.js';
 import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
@@ -11,19 +12,22 @@ import fs from 'fs/promises';
 export async function list(req, res, next) {
   try {
     const {
-      q, genre, year, released, lang, type, from, to, sort = 'popularity', order = 'desc',
+      q, genre, year, released, lang, type, from, to, order = 'desc',
       page = 1, limit = 20,
     } = req.query;
+    // มีคำค้น → ค่าเริ่มต้นเรียงตามความใกล้เคียง (relevance)
+    const sort = req.query.sort || (q ? 'relevance' : 'popularity');
 
     const take = Math.min(Number(limit), 50);
     const skip = (Number(page) - 1) * take;
 
     const where = { isPublished: true };
-    if (q) where.OR = [
-      { title: { contains: q, mode: 'insensitive' } },
-      { titleTh: { contains: q, mode: 'insensitive' } },
-      { titleEn: { contains: q, mode: 'insensitive' } },
-    ];
+    // ค้นแบบทนพิมพ์ผิด (search.service) → ได้ id ที่ตรงพร้อมคะแนนความใกล้เคียง
+    let ranked = null;
+    if (q && String(q).trim()) {
+      ranked = await searchMovies(String(q), { limit: 600 });
+      where.id = { in: ranked.map((r) => r.id) };
+    }
     if (genre) where.genres = { some: { genre: { slug: genre } } };
     if (year) {
       const y = Number(year);
@@ -53,21 +57,30 @@ export async function list(req, res, next) {
     // type=movie (หนัง) | type=tv (ซีรีส์) — ไม่ระบุ = ทั้งหมด
     if (type === 'movie' || type === 'tv') where.mediaType = type;
 
-    const allowedSorts = ['popularity', 'averageRating', 'releaseDate', 'createdAt', 'reviewCount'];
-    const orderBy = { [allowedSorts.includes(sort) ? sort : 'popularity']: order === 'asc' ? 'asc' : 'desc' };
+    const select = {
+      id: true, slug: true, title: true, titleTh: true, posterUrl: true,
+      releaseDate: true, averageRating: true, ratingCount: true, reviewCount: true,
+      mediaType: true, numberOfSeasons: true,
+      genres: { select: { genre: { select: { name: true, nameTh: true, slug: true } } } },
+    };
 
-    const [items, total] = await Promise.all([
-      prisma.movie.findMany({
-        where, orderBy, take, skip,
-        select: {
-          id: true, slug: true, title: true, titleTh: true, posterUrl: true,
-          releaseDate: true, averageRating: true, ratingCount: true, reviewCount: true,
-          mediaType: true, numberOfSeasons: true,
-          genres: { select: { genre: { select: { name: true, nameTh: true, slug: true } } } },
-        },
-      }),
-      prisma.movie.count({ where }),
-    ]);
+    let items;
+    let total;
+    if (ranked && sort === 'relevance') {
+      // เรียงตามคะแนนค้นหา (ผลลัพธ์ไม่เกิน 600 เรื่อง → กรองแล้วแบ่งหน้าในหน่วยความจำ)
+      const rank = new Map(ranked.map((r, i) => [r.id, i]));
+      const all = await prisma.movie.findMany({ where, select });
+      all.sort((a, b) => rank.get(a.id) - rank.get(b.id));
+      total = all.length;
+      items = all.slice(skip, skip + take);
+    } else {
+      const allowedSorts = ['popularity', 'averageRating', 'releaseDate', 'createdAt', 'reviewCount'];
+      const orderBy = { [allowedSorts.includes(sort) ? sort : 'popularity']: order === 'asc' ? 'asc' : 'desc' };
+      [items, total] = await Promise.all([
+        prisma.movie.findMany({ where, orderBy, take, skip, select }),
+        prisma.movie.count({ where }),
+      ]);
+    }
 
     res.json({
       items: items.map(m => ({
@@ -78,6 +91,21 @@ export async function list(req, res, next) {
       page: Number(page),
       totalPages: Math.ceil(total / take),
     });
+  } catch (err) { next(err); }
+}
+
+// ค้นหาแบบพิมพ์ไปแนะนำไป (ช่องค้นหาด้านบน) — ผลน้อย ตอบเร็ว
+export async function suggest(req, res, next) {
+  try {
+    const q = String(req.query.q || '').trim();
+    if (!q) return res.json({ items: [] });
+    const ranked = await searchMovies(q, { limit: 8 });
+    const rows = await prisma.movie.findMany({
+      where: { id: { in: ranked.map((r) => r.id) } },
+      select: { id: true, slug: true, title: true, titleTh: true, titleEn: true, posterUrl: true, releaseDate: true, mediaType: true },
+    });
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    res.json({ items: ranked.map((r) => byId.get(r.id)).filter(Boolean) });
   } catch (err) { next(err); }
 }
 
