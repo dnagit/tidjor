@@ -1,6 +1,6 @@
 import './loadEnv.js';
 import prisma from '../src/config/prisma.js';
-import { syncMovies, syncTvSeries, syncAllMedia } from '../src/services/tmdbSync.service.js';
+import { syncMovies, syncTvSeries, syncAllMedia, syncTvDiscover } from '../src/services/tmdbSync.service.js';
 
 // ============================================================
 // CLI runner
@@ -10,6 +10,7 @@ import { syncMovies, syncTvSeries, syncAllMedia } from '../src/services/tmdbSync
 //   node scripts/syncTmdb.js all          # ดึงทั้งหมด (ทุกหน้าที่ TMDB ยอมให้)
 //   node scripts/syncTmdb.js movies 5     # ดึงเฉพาะหนัง 5 หน้าแรก
 //   node scripts/syncTmdb.js tv 10        # ดึงเฉพาะซีรีย์ 10 หน้าแรก
+//   node scripts/syncTmdb.js tv-discover 25   # ซีรีส์ไทย/เกาหลี/จีน/ญี่ปุ่น/ฝรั่ง/ดูได้ในไทย ชุดละ 25 หน้า
 //
 // env เสริม:
 //   TMDB_RATE_DELAY_MS=250    # หน่วงระหว่าง request (กัน rate limit)
@@ -27,11 +28,14 @@ async function main() {
     case 'tv':
       await syncTvSeries(opts);
       break;
+    case 'tv-discover':
+      await syncTvDiscover({ maxPages: Number.isFinite(maxPages) ? maxPages : 5 });
+      break;
     case 'all':
       await syncAllMedia(opts);
       break;
     default:
-      console.error(`คำสั่งไม่ถูกต้อง: "${cmd}" — ใช้ได้: movies | tv | all`);
+      console.error(`คำสั่งไม่ถูกต้อง: "${cmd}" — ใช้ได้: movies | tv | tv-discover | all`);
       process.exitCode = 1;
   }
 }

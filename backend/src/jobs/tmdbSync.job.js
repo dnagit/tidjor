@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { syncMovies, syncTvSeries } from '../services/tmdbSync.service.js';
+import { syncMovies, syncTvSeries, syncTvDiscover } from '../services/tmdbSync.service.js';
 
 // ============================================================
 // ดึงหนังและซีรีย์ใหม่จาก TMDB ทุกวัน — ตั้งเวลาให้รันก่อน AI review
@@ -27,6 +27,8 @@ export function startTmdbSyncJob() {
       // ซีรีย์: กำลังออกอากาศ + ยอดนิยม
       await syncTvSeries({ list: 'on_the_air', maxPages });
       await syncTvSeries({ list: 'popular', maxPages });
+      // ซีรีส์ไทย/เกาหลี/จีน/ญี่ปุ่น/ดูได้ในไทย — ชุดละ 2 หน้า (เรื่องที่มีแล้วข้ามเร็ว)
+      await syncTvDiscover({ maxPages: Number(process.env.TMDB_SYNC_TV_DISCOVER_PAGES || 2) });
     } catch (err) {
       console.error('[tmdb-sync] cron error:', err);
     } finally {

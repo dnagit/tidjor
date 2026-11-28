@@ -232,20 +232,24 @@ export async function syncMovies({ maxPages = Infinity, startPage = 1, list = 'p
 // TV → ตาราง Movie (mediaType = tv)
 // list: 'popular' | 'on_the_air' (กำลังออกอากาศ) | 'airing_today' | 'top_rated'
 // ============================================================
-export async function syncTvSeries({ maxPages = Infinity, startPage = 1, list = 'popular' } = {}) {
+// discover = params ของ /discover/tv (ใช้แทน list) เช่น { with_original_language: 'th' }
+export async function syncTvSeries({ maxPages = Infinity, startPage = 1, list = 'popular', discover: discoverParams, label } = {}) {
   let saved = 0;
   let skipped = 0;
   let failed = 0;
 
   await ensureTvGenres();
-  const first = await tmdbGet(`/tv/${list}`, { page: startPage });
+  const path = discoverParams ? '/discover/tv' : `/tv/${list}`;
+  const params = discoverParams ? { include_adult: false, sort_by: 'popularity.desc', ...discoverParams } : {};
+  const name = label || list;
+  const first = await tmdbGet(path, { ...params, page: startPage });
   const lastPage = Math.min(first.total_pages || 1, TMDB_PAGE_LIMIT, startPage - 1 + maxPages);
-  log(`เริ่ม sync ซีรีย์ (${list}) → ตาราง Movie | total_pages=${first.total_pages} → หน้า ${startPage}..${lastPage}`);
+  log(`เริ่ม sync ซีรีย์ (${name}) → ตาราง Movie | total_pages=${first.total_pages} → หน้า ${startPage}..${lastPage}`);
 
   for (let page = startPage; page <= lastPage; page++) {
     let data;
     try {
-      data = page === startPage ? first : await tmdbGet(`/tv/${list}`, { page });
+      data = page === startPage ? first : await tmdbGet(path, { ...params, page });
     } catch (err) {
       failed++;
       logError(`[tv] ดึงหน้า ${page} ไม่สำเร็จ`, err);
@@ -277,6 +281,31 @@ export async function syncTvSeries({ maxPages = Infinity, startPage = 1, list = 
 
   log(`✅ เสร็จสิ้น ซีรีย์ — เพิ่มใหม่ ${saved}, ข้ามที่ซ้ำ ${skipped}, ล้มเหลว ${failed}`);
   return { type: 'tv', saved, skipped, failed };
+}
+
+// ============================================================
+// ซีรีส์ที่คนไทยดู — popular ของ TMDB เป็นซีรีส์ฝรั่งเกือบทั้งหมด จึงดึงแยกตามภาษา/ที่ดูได้ในไทยเพิ่ม
+// ตัดรายการข่าว (10763) และทอล์กโชว์ (10767) — ไทย/เกาหลี/ดูได้ในไทย เก็บวาไรตี้ไว้ (เช่น Running Man มีคนดูในไทยเยอะ)
+// ============================================================
+const NO_TALK = { without_genres: '10763|10767' };
+const NO_VARIETY = { without_genres: '10763|10764|10767' }; // + ตัดเรียลลิตี้/วาไรตี้ (ชื่อมักไม่มีภาษาไทย)
+export const TV_DISCOVER_SETS = [
+  { label: 'ดูได้ในไทย (สตรีมมิง)', params: { watch_region: 'TH', with_watch_monetization_types: 'flatrate|free|ads', 'vote_count.gte': 20, ...NO_TALK } },
+  { label: 'ซีรีส์ไทย', params: { with_original_language: 'th', 'vote_count.gte': 2, ...NO_TALK } },
+  { label: 'ซีรีส์เกาหลี', params: { with_original_language: 'ko', 'vote_count.gte': 20, ...NO_TALK } },
+  { label: 'ซีรีส์จีน', params: { with_original_language: 'zh', 'vote_count.gte': 10, ...NO_VARIETY } },
+  { label: 'ซีรีส์ญี่ปุ่น/อนิเมะ', params: { with_original_language: 'ja', 'vote_count.gte': 30, ...NO_VARIETY } },
+  { label: 'ซีรีส์ฝรั่ง', params: { with_original_language: 'en', 'vote_count.gte': 300, ...NO_VARIETY } },
+];
+
+export async function syncTvDiscover({ maxPages = 5 } = {}) {
+  const results = [];
+  for (const set of TV_DISCOVER_SETS) {
+    results.push(await syncTvSeries({ discover: set.params, label: set.label, maxPages }));
+  }
+  const saved = results.reduce((n, r) => n + r.saved, 0);
+  log(`✅ ซีรีส์ตามภาษา/ดูได้ในไทย — เพิ่มใหม่รวม ${saved} เรื่อง`);
+  return { saved, results };
 }
 
 export async function syncAllMedia(opts = {}) {
