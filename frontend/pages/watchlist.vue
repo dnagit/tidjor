@@ -1,7 +1,8 @@
 <script setup lang="ts">
 definePageMeta({ middleware: 'auth' });
 const api = useApi();
-const { data, refresh } = await useAsyncData('watchlist', () => api.get<{ items: any[] }>('/api/watchlist'));
+// deep: true — แก้สถานะ/คะแนนในรายการแล้วหน้าอัปเดตทันที (ค่าเริ่มต้นเป็น shallow)
+const { data, refresh } = await useAsyncData('watchlist', () => api.get<{ items: any[] }>('/api/watchlist'), { deep: true });
 
 const tab = ref<'want' | 'watched'>('want');
 const items = computed(() => (data.value?.items || []).filter((w) => (tab.value === 'watched') === (w.status === 'WATCHED')));
@@ -20,8 +21,9 @@ async function markWatched(w: any) {
   if (!w.myRating) asking.value = w.movie.id;
 }
 async function rate(w: any, n: number) {
-  await api.post('/api/reviews', { movieId: w.movie.id, rating: n });
+  const r = await api.post<any>('/api/reviews', { movieId: w.movie.id, rating: n });
   w.myRating = n;
+  if (r?.movieStats) Object.assign(w.movie, r.movieStats); // คะแนนบนการ์ดอัปเดตทันที
   asking.value = null;
   track('rate', { ...mediaParams(w.movie), rating: n, from: 'watchlist' });
 }

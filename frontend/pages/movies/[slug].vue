@@ -106,6 +106,8 @@ const form = ref({ rating: 8, title: '', content: '', hasSpoiler: false });
 
 // คะแนน/รีวิวที่เคยให้ไว้ (โหลดฝั่ง browser หลังรู้ว่า login แล้ว)
 const myRating = ref<number | null>(null);
+// ข้อมูลจาก useFetch เป็น shallow → แยกตัวเลขคะแนนเป็น reactive ให้อัปเดตบนหน้าได้หลังกดดาว
+const liveStats = reactive({ averageRating: m.averageRating, ratingCount: m.ratingCount, reviewCount: m.reviewCount });
 async function loadMine() {
   const r = await api.get<{ review: any }>(`/api/reviews/mine/${m.id}`).catch(() => null);
   if (!r?.review) return;
@@ -113,7 +115,11 @@ async function loadMine() {
   form.value = { rating: r.review.rating, title: r.review.title || '', content: r.review.content || '', hasSpoiler: r.review.hasSpoiler };
 }
 onMounted(() => watch(() => auth.isAuthenticated, (ok) => ok && loadMine(), { immediate: true }));
-function onRated(n: number) { myRating.value = n; form.value.rating = n; }
+function onRated(n: number, stats?: any) {
+  myRating.value = n;
+  form.value.rating = n;
+  if (stats) Object.assign(liveStats, stats); // อัปเดตคะแนนเฉลี่ย/จำนวนโหวตบนหน้าทันที
+}
 function openForm() { showForm.value = true; track('open_review_form', mediaParams(m)); }
 
 async function submitReview() {
@@ -181,10 +187,10 @@ async function toggleWatchlist() {
             <div>
               <div class="flex items-center gap-2">
                 <span class="text-3xl text-brand-500">⭐</span>
-                <span class="text-3xl font-bold">{{ m.ratingCount ? m.averageRating.toFixed(1) : '-' }}</span>
+                <span class="text-3xl font-bold">{{ liveStats.ratingCount ? liveStats.averageRating.toFixed(1) : '-' }}</span>
                 <span class="text-gray-500">/10</span>
               </div>
-              <p class="text-sm text-gray-500">{{ m.ratingCount }} โหวต</p>
+              <p class="text-sm text-gray-500">{{ liveStats.ratingCount }} โหวต</p>
             </div>
             <div class="text-sm text-gray-600">
               <p v-if="isTv" class="font-medium">📺 ซีรีส์<template v-if="m.studio"> · {{ m.studio }}</template></p>
@@ -240,7 +246,7 @@ async function toggleWatchlist() {
 
       <!-- Reviews -->
       <section class="mt-10">
-        <h2 class="text-2xl font-bold mb-4">รีวิว ({{ m.reviewCount }})</h2>
+        <h2 class="text-2xl font-bold mb-4">รีวิว ({{ liveStats.reviewCount }})</h2>
         <div v-if="m.reviews?.length" class="space-y-4">
           <ReviewCard v-for="r in m.reviews" :key="r.id" :review="r" />
         </div>

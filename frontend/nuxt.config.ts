@@ -56,8 +56,9 @@ export default defineNuxtConfig({
   // หน้า admin ใช้ session ฝั่ง client (localStorage) → ปิด SSR กันหลุด login ตอน refresh
   routeRules: {
     '/admin/**': { ssr: false },
-    // หน้าแรกเหมือนกันทุกคน (สถานะ login อยู่ฝั่ง browser) → cache ผล render 5 นาที ลด TTFB
-    '/': { swr: 300 },
+    // หน้าแรกเหมือนกันทุกคน (สถานะ login อยู่ฝั่ง browser) → cache ผล render 1 นาที ลด TTFB
+    // (นานกว่านี้ คะแนน/รีวิวใหม่จะขึ้นหน้าแรกช้า)
+    '/': { swr: 60 },
   },
 
   // โปรเจกต์อยู่ใน ~/Documents (iCloud sync) → iCloud คอยแตะไฟล์ .nuxt/.DS_Store ทำให้ dev restart วนไม่หยุด

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // ให้คะแนนในคลิกเดียว (ไม่ต้องเขียนรีวิว) — กดดาวแล้วบันทึกทันที
 const props = defineProps<{ movie: any; myRating?: number | null }>();
-const emit = defineEmits<{ (e: 'rated', rating: number): void; (e: 'write'): void }>();
+const emit = defineEmits<{ (e: 'rated', rating: number, stats?: any): void; (e: 'write'): void }>();
 const auth = useAuthStore();
 const api = useApi();
 const route = useRoute();
@@ -15,10 +15,10 @@ async function rate(n: number) {
   rating.value = n;
   saving.value = true;
   try {
-    await api.post('/api/reviews', { movieId: props.movie.id, rating: n });
+    const r = await api.post<any>('/api/reviews', { movieId: props.movie.id, rating: n });
     saved.value = true;
     track('rate', { ...mediaParams(props.movie), rating: n });
-    emit('rated', n);
+    emit('rated', n, r?.movieStats);
   } finally { saving.value = false; }
 }
 </script>

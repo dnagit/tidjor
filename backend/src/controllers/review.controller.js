@@ -52,7 +52,12 @@ export async function create(req, res, next) {
     });
 
     await recomputeMovieStats(movieId);
-    res.status(201).json(review);
+    // ส่งคะแนนรวมใหม่กลับไปด้วย — หน้าเว็บอัปเดตตัวเลขได้ทันทีไม่ต้องรีเฟรช
+    const stats = await prisma.movie.findUnique({
+      where: { id: movieId },
+      select: { averageRating: true, ratingCount: true, reviewCount: true },
+    });
+    res.status(201).json({ ...review, movieStats: stats });
   } catch (err) { next(err); }
 }
 
