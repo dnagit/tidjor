@@ -285,7 +285,7 @@ function scrollTo(id: string) { document.getElementById(id)?.scrollIntoView({ be
 
         <div class="lg:hidden"><WatchProviders :providers="m.watchProviders" :title="m.titleTh || m.title" :is-tv="isTv" /></div>
 
-        <div id="rate"><QuickRate :movie="m" :my-rating="myRating" @rated="onRated" @write="openForm" /></div>
+        <div id="rate" class="scroll-mt-28"><QuickRate :movie="m" :my-rating="myRating" @rated="onRated" @write="openForm" /></div>
 
         <!-- ฟอร์มรีวิว -->
         <section v-if="showForm" id="review-form" class="card p-5 md:p-6">
