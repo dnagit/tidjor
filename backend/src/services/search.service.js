@@ -85,7 +85,7 @@ function scoreName(q, qBigrams, { n, bg }) {
     partial = (2 * h2) / (qBigrams.length + head.length);
   }
   const sim = Math.max(dice, partial * 0.95);
-  return sim >= 0.5 ? 40 + sim * 40 : 0;
+  return sim >= 0.62 ? 40 + sim * 40 : 0; // ต่ำกว่านี้มักเป็นคำคนละคำที่มีตัวอักษรคล้าย (เช่น parasite ≠ jurassic park)
 }
 
 // คืน [{ id, score }] เรียงจากใกล้เคียงที่สุด
