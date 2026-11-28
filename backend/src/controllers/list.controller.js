@@ -26,7 +26,7 @@ export async function getBySlug(req, res, next) {
     const byId = new Map(movies.map((m) => [m.id, {
       ...m,
       genres: m.genres.map((g) => g.genre),
-      stream: [...(m.watchProviders?.stream || []), ...(m.watchProviders?.free || [])].map((p) => p.name),
+      stream: [...new Set([...(m.watchProviders?.stream || []), ...(m.watchProviders?.free || [])].map((p) => p.name))],
       watchProviders: undefined,
     }]));
     const items = l.items.map((i) => ({ blurb: i.blurb, movie: byId.get(i.movieId) })).filter((i) => i.movie);

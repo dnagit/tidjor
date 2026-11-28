@@ -34,7 +34,7 @@ const { data: news } = await useFetch<{ items: any[] }>('/api/news', {
 // ===== SEO =====
 const siteUrl = config.public.siteUrl;
 // "ดูได้ที่ Netflix, Disney+" นำหน้าคำอธิบาย — คนค้น "เรื่อง X ดูได้ที่ไหน" เยอะ
-const streamNames = [...(m.watchProviders?.stream || []), ...(m.watchProviders?.free || [])].map((p: any) => p.name);
+const streamNames = [...new Set([...(m.watchProviders?.stream || []), ...(m.watchProviders?.free || [])].map((p: any) => p.name))];
 const shareImage = tmdbImg(m.backdropUrl, 'w1280') || tmdbImg(m.posterUrl, 'w780') || `${siteUrl.replace(/\/+$/, '')}/logo.jpg`;
 const watchText = streamNames.length ? `ดูได้ที่ ${streamNames.slice(0, 3).join(', ')} · ` : '';
 useSeoMeta({
