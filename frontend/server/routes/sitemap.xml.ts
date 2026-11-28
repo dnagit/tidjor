@@ -16,6 +16,8 @@ export default defineEventHandler(async (event) => {
     { loc: `${site}/series`, priority: '0.8' },
     { loc: `${site}/reviews`, priority: '0.6' },
     { loc: `${site}/news`, priority: '0.7' },
+    { loc: `${site}/upcoming`, priority: '0.8' },
+    { loc: `${site}/privacy`, priority: '0.2' },
   ];
 
   try {

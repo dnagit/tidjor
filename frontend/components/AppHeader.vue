@@ -34,8 +34,9 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
       <nav class="hidden md:flex items-center gap-1 ml-4">
         <NuxtLink to="/movies?type=movie" class="btn-ghost text-sm">หนัง</NuxtLink>
         <NuxtLink to="/series" class="btn-ghost text-sm">ซีรีส์</NuxtLink>
-        <NuxtLink to="/movies?sort=popularity" class="btn-ghost text-sm">ยอดนิยม</NuxtLink>
-        <NuxtLink to="/reviews" class="btn-ghost text-sm">รีวิวล่าสุด</NuxtLink>
+        <NuxtLink to="/movies?sort=popularity" class="btn-ghost text-sm hidden xl:inline-flex">ยอดนิยม</NuxtLink>
+        <NuxtLink to="/reviews" class="btn-ghost text-sm hidden lg:inline-flex">รีวิวล่าสุด</NuxtLink>
+        <NuxtLink to="/upcoming" class="btn-ghost text-sm">เข้าฉายเร็ว ๆ นี้</NuxtLink>
         <NuxtLink to="/news" class="btn-ghost text-sm">ข่าว</NuxtLink>
       </nav>
 
@@ -108,6 +109,9 @@ watch(() => route.fullPath, () => { mobileOpen.value = false; });
             </NuxtLink>
             <NuxtLink to="/reviews" class="py-3.5 border-b border-gray-100 text-gray-800 font-medium" @click="mobileOpen = false">
               ✍️ รีวิวล่าสุด
+            </NuxtLink>
+            <NuxtLink to="/upcoming" class="py-3.5 border-b border-gray-100 text-gray-800 font-medium" @click="mobileOpen = false">
+              🗓️ เข้าฉายเร็ว ๆ นี้
             </NuxtLink>
             <NuxtLink to="/news" class="py-3.5 border-b border-gray-100 text-gray-800 font-medium" @click="mobileOpen = false">
               📰 ข่าวหนังและซีรีส์
