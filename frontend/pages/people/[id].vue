@@ -76,7 +76,7 @@ useHead({
         fetchpriority="high"
         width="200"
         height="300"
-        class="w-40 sm:w-52 aspect-[2/3] object-cover rounded-xl shadow mx-auto sm:mx-0 shrink-0"
+        class="w-40 sm:w-52 aspect-[2/3] object-cover self-center sm:self-start rounded-xl shadow mx-auto sm:mx-0 shrink-0"
       />
       <div v-else class="w-40 sm:w-52 aspect-[2/3] rounded-xl bg-gray-100 flex items-center justify-center text-5xl mx-auto sm:mx-0 shrink-0">🎭</div>
 

@@ -173,7 +173,7 @@ async function toggleWatchlist() {
           height="513"
           :alt="m.titleTh || m.title"
           fetchpriority="high"
-          class="w-48 md:w-64 h-auto rounded-xl2 shadow-xl"
+          class="w-48 md:w-64 h-auto aspect-[2/3] object-cover self-start shrink-0 rounded-xl2 shadow-xl"
         />
         <div class="flex-1 pt-4 md:pt-32">
           <h1 class="text-3xl md:text-4xl font-bold mb-2">{{ m.titleTh || m.title }}</h1>
