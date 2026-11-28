@@ -51,6 +51,11 @@ export async function getPersonProfile(personId) {
       posterUrl: img(c.poster_path, 'w342'),
       episodeCount: c.episode_count || null,
       popularity: c.popularity || 0,
+      voteCount: c.vote_count || 0,
+      backdropUrl: img(c.backdrop_path, 'w1280'),
+      // ไปเป็นตัวเอง / สารคดี / ภาพเก่า — ไม่ใช่บทแสดงจริง (ซ่อนไว้เป็นค่าเริ่มต้นบนหน้าเว็บ)
+      isSelf: /\b(self|himself|herself|themselves|narrator)\b|archive|ตัวเอง/i.test(c.character || '')
+        || (c.genre_ids || []).includes(99),
     }))
     .sort((a, b) => (b.date || '0').localeCompare(a.date || '0'));
 
@@ -83,6 +88,8 @@ export async function getPersonProfile(personId) {
     profileUrl: img(p.profile_path, 'h632'),
     imdbId: p.imdb_id || null,
     credits,
+    // ภาพพื้นหลังส่วนหัว: จากผลงานดังที่สุดที่มีภาพ
+    backdropUrl: [...credits].filter((c) => !c.isSelf && c.backdropUrl).sort((a, b) => b.voteCount - a.voteCount)[0]?.backdropUrl || null,
   };
   cache.set(personId, { at: Date.now(), data });
   return data;
