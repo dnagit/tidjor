@@ -26,13 +26,19 @@ useSeoMeta({
   ogTitle: a.title,
   ogDescription: a.excerpt,
   ogType: 'article',
-  ogImage: image || '/logo.jpg',
+  // ใส่ขนาดรูปด้วย — ไม่งั้น Facebook/LINE มักไม่แสดงรูปตอนแชร์ครั้งแรก
+  ogImage: image || `${siteUrl}/logo.jpg`,
+  ogImageSecureUrl: image || undefined,
+  ogImageWidth: image ? 1280 : undefined,
+  ogImageHeight: image ? 720 : undefined,
+  ogImageAlt: a.title,
+  ogImageType: 'image/jpeg',
   twitterCard: 'summary_large_image',
+  twitterImage: image || `${siteUrl}/logo.jpg`,
   articlePublishedTime: a.publishedAt,
   articleModifiedTime: a.updatedAt,
 });
 useHead({
-  link: [{ rel: 'canonical', href: pageUrl }],
   script: [{
     type: 'application/ld+json',
     innerHTML: JSON.stringify({

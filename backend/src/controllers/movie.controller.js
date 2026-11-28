@@ -2,6 +2,7 @@ import prisma from '../config/prisma.js';
 import slugify from 'slugify';
 import * as tmdb from '../services/tmdb.service.js';
 import { fillCastIds } from '../services/people.service.js';
+import { ensureWatchProviders, hasProviders } from '../services/watchProviders.service.js';
 import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
@@ -10,7 +11,7 @@ import fs from 'fs/promises';
 export async function list(req, res, next) {
   try {
     const {
-      q, genre, year, released, lang, type, sort = 'popularity', order = 'desc',
+      q, genre, year, released, lang, type, from, to, sort = 'popularity', order = 'desc',
       page = 1, limit = 20,
     } = req.query;
 
@@ -35,6 +36,15 @@ export async function list(req, res, next) {
     // หนังเข้าใหม่: เฉพาะที่ฉายแล้ว (releaseDate ≤ วันนี้)
     if ((released === '1' || released === 'true') && !where.releaseDate) {
       where.releaseDate = { lte: new Date() };
+    }
+
+    // ช่วงวันฉาย from/to (YYYY-MM-DD) — ใช้ในหน้าเข้าฉายเร็ว ๆ นี้ (/upcoming)
+    const fromDate = from && new Date(from);
+    const toDate = to && new Date(to);
+    if (!where.releaseDate && (fromDate || toDate)) {
+      where.releaseDate = {};
+      if (fromDate && !Number.isNaN(fromDate.getTime())) where.releaseDate.gte = fromDate;
+      if (toDate && !Number.isNaN(toDate.getTime())) where.releaseDate.lte = toDate;
     }
 
     // กรองตามภาษาต้นฉบับ เช่น lang=th (หนังไทย)
@@ -104,7 +114,11 @@ export async function getBySlug(req, res, next) {
     if (!movie || !movie.isPublished) return res.status(404).json({ error: 'not_found' });
 
     // cast เก่ายังไม่มี person id → เติมจาก TMDB (ครั้งแรกครั้งเดียว) ให้กดไปหน้านักแสดงได้
-    movie.cast = await fillCastIds(movie);
+    // ดึงพร้อมกันกับ cast — ไม่ให้หน้าเว็บรอนานขึ้น
+    const [cast, providers] = await Promise.all([fillCastIds(movie), ensureWatchProviders(movie)]);
+    movie.cast = cast;
+    movie.watchProviders = hasProviders(providers) ? providers : null;
+    delete movie.watchProvidersAt;
 
     // Top reviews
     const reviews = await prisma.review.findMany({

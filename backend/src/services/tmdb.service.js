@@ -41,6 +41,23 @@ export async function getMovieReviews(tmdbId, mediaType = 'movie') {
   return data.results || [];
 }
 
+// ดูได้ที่ไหนในไทย (ข้อมูลจาก JustWatch ผ่าน TMDB) — คืน null ถ้าไม่มีข้อมูลของไทย
+export async function getWatchProviders(tmdbId, mediaType = 'movie') {
+  const { data } = await tmdb.get(`/${mediaType}/${tmdbId}/watch/providers`, { timeout: 4000 });
+  const th = data.results?.TH;
+  if (!th) return null;
+  const list = (items) => (items || [])
+    .sort((a, b) => (a.display_priority ?? 99) - (b.display_priority ?? 99))
+    .map((p) => ({ name: p.provider_name, logo: p.logo_path ? `https://image.tmdb.org/t/p/w92${p.logo_path}` : null }));
+  return {
+    link: th.link || null,
+    stream: list(th.flatrate),
+    free: list([...(th.free || []), ...(th.ads || [])]),
+    rent: list(th.rent),
+    buy: list(th.buy),
+  };
+}
+
 export async function getPopular(page = 1) {
   const { data } = await tmdb.get('/movie/popular', { params: { page } });
   return data;

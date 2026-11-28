@@ -147,6 +147,10 @@ model Movie {
   budget   BigInt?
   revenue  BigInt?
 
+  // ดูได้ที่ไหน (ประเทศไทย) จาก TMDB/JustWatch — cache ไว้ อัปเดตทุก 3 วันเมื่อมีคนเปิดหน้า
+  watchProviders   Json? // { link, stream: [{ name, logo }], rent, buy, free }
+  watchProvidersAt DateTime?
+
   // Stats (denormalized for performance)
   averageRating  Float @default(0)
   ratingCount    Int   @default(0)

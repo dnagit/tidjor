@@ -33,13 +33,21 @@ const { data: news } = await useFetch<{ items: any[] }>('/api/news', {
 
 // ===== SEO =====
 const siteUrl = config.public.siteUrl;
+// "ดูได้ที่ Netflix, Disney+" นำหน้าคำอธิบาย — คนค้น "เรื่อง X ดูได้ที่ไหน" เยอะ
+const streamNames = [...(m.watchProviders?.stream || []), ...(m.watchProviders?.free || [])].map((p: any) => p.name);
+const shareImage = tmdbImg(m.backdropUrl, 'w1280') || tmdbImg(m.posterUrl, 'w780') || `${siteUrl.replace(/\/+$/, '')}/logo.jpg`;
+const watchText = streamNames.length ? `ดูได้ที่ ${streamNames.slice(0, 3).join(', ')} · ` : '';
 useSeoMeta({
   title: `${m.titleTh || m.title} (${m.releaseDate ? new Date(m.releaseDate).getFullYear() : ''})`,
-  description: m.overview || `รีวิวและให้คะแนน${isTv ? 'ซีรีส์' : 'หนัง'} ${m.title}`,
+  description: `${watchText}${m.overview || `รีวิวและให้คะแนน${isTv ? 'ซีรีส์' : 'หนัง'} ${m.title}`}`.slice(0, 300),
   ogTitle: `${m.titleTh || m.title} - ติดจอ`,
   ogDescription: m.overview,
-  ogImage: tmdbImg(m.backdropUrl, 'w1280') || tmdbImg(m.posterUrl, 'w780') || '/logo.jpg',
+  ogImage: shareImage,
+  ogImageWidth: m.backdropUrl ? 1280 : m.posterUrl ? 780 : undefined,
+  ogImageHeight: m.backdropUrl ? 720 : m.posterUrl ? 1170 : undefined,
+  ogImageAlt: m.titleTh || m.title,
   twitterCard: 'summary_large_image',
+  twitterImage: shareImage,
 });
 
 // ===== Structured data (JSON-LD) — Movie / TVSeries =====
@@ -177,6 +185,8 @@ async function toggleWatchlist() {
 
           <p v-if="m.tagline" class="italic text-gray-600 mb-3">"{{ m.tagline }}"</p>
           <p class="leading-relaxed text-gray-700 mb-6">{{ m.overview }}</p>
+
+          <WatchProviders :providers="m.watchProviders" :title="m.titleTh || m.title" :is-tv="isTv" />
 
           <div class="flex gap-3">
             <button class="btn-primary" @click="showForm = !showForm; if (showForm) track('open_review_form', mediaParams(m))">✍️ เขียนรีวิว</button>

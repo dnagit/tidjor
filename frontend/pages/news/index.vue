@@ -13,13 +13,11 @@ watch(page, (p) => {
   if (import.meta.client) window.scrollTo({ top: 0 });
 });
 
-const siteUrl = config.public.siteUrl.replace(/\/+$/, '');
 useSeoMeta({
   title: page.value > 1 ? `ข่าวหนังและซีรีส์ หน้า ${page.value}` : 'ข่าวหนังและซีรีส์ที่กำลังจะเข้าฉาย',
   description: 'อัปเดตข่าวหนังและซีรีส์ที่กำลังจะเข้าฉายและออนในไทย วันฉาย ตัวอย่างล่าสุด นักแสดง และดูได้ที่ไหน',
   ogTitle: 'ข่าวหนังและซีรีส์ - ติดจอ',
 });
-useHead({ link: [{ rel: 'canonical', href: `${siteUrl}/news${page.value > 1 ? `?page=${page.value}` : ''}` }] });
 </script>
 
 <template>
