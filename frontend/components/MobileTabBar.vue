@@ -2,6 +2,8 @@
 // แถบเมนูล่างจอ (มือถือเท่านั้น) แบบแอป — ค้นหาเปิดเป็นหน้าเต็มจอ
 const route = useRoute();
 const auth = useAuthStore();
+// ต้อง resolve ใน script — เรียกใน template จะได้แท็ก <NuxtLink> ดิบที่กดไม่ได้
+const NuxtLink = resolveComponent('NuxtLink');
 const searchOpen = useState('mobile-search', () => false);
 
 const tabs = computed(() => [
@@ -26,7 +28,7 @@ watch(searchOpen, (v) => { if (import.meta.client) document.body.style.overflow 
     <ul class="grid grid-cols-5">
       <li v-for="t in tabs" :key="t.label">
         <component
-          :is="t.to ? resolveComponent('NuxtLink') : 'button'"
+          :is="t.to ? NuxtLink : 'button'"
           :to="t.to || undefined" :type="t.to ? undefined : 'button'"
           class="w-full flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] transition"
           :class="t.active ? 'text-brand-600 font-semibold' : 'text-gray-500'"
